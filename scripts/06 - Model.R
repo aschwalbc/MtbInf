@@ -298,7 +298,7 @@ sis <- function(times, state, parms) {
 times <- seq(from = 0, to = 116, by = 1)
 
 countries <- unique(ARI$iso3) # 166 countries
-#countries <- c("JPN","IND","CHN")
+countries <- c("JPN","IND","CHN")
 #countries <- "JPN"
 list_df <- list()
 
@@ -413,8 +413,7 @@ toc()
 # export(mtb,here("data","mtb","Mtb_IHME_rev_mix_pop_nosc.Rdata")) # IHME - Reversion - Mix - No self-clearance
 # export(mtb,here("data","mtb","Mtb_IHME_norev_mix_pop_nosc.Rdata")) # IHME - No reversion - Mix - No self-clearance
 # export(mtb,here("data","mtb","Mtb_IHME_norev_nomix_pop_nosc.Rdata")) # IHME - No reversion - No mix - No self-clearance
-export(mtb,here("data","mtb","Mtb_WHO_norev_nomix_pop_nosc.Rdata")) # WHO - No reversion - No mix - No self-clearance
-
+# export(mtb,here("data","mtb","Mtb_WHO_norev_nomix_pop_nosc.Rdata")) # WHO - No reversion - No mix - No self-clearance
 
 ## PJD: having run above for countries <- c("JPN","IND","CHN")
 names(mtb)
@@ -422,7 +421,7 @@ ari[year==1934]
 
 ## focus on CHN
 mtb <- as.data.table(mtb)
-test <- mtb[time==116 & iso3=='CHN']
+test <- mtb[time==80 & iso3=='CHN'] # Change time/year [PJD time==116]
 test <- melt(test,id='iso3')
 test <- test[startsWith(as.character(variable),'S')]
 test[,LTBIode:=1-value]
@@ -431,11 +430,10 @@ test[,LTBIode:=1-value]
 testa <- ari[acat=='45+' & agegp=='45-49']
 testa <- testa[order(year,decreasing=TRUE),.(iso3,year,ari)]
 testa[,cari:=cumsum(ari),by=iso3 ]
-testa[,age:=2050-year]
+testa[,age:=2014-year] # Change year [PJD: 2050-year]
 testa[,LTBI:=1-exp(-cari)]
 testa[,acat:=cut(age,breaks=c(0,maxage),include.lowest=TRUE,right=FALSE)]
 testa <- testa[!is.na(acat),.(LTBI=mean(LTBI)),by=.(iso3,acat)]
-
 
 ## compare
 plot(test$LTBIode,testa$LTBI)
@@ -445,7 +443,7 @@ abline(a=0,b=1,col=2)
 POP <- import(here("data","sources","pop","WPP_Pop_1950-2100.csv"))
 POP <- as.data.table(POP)
 POP <- POP[ISO3_code=='CHN']
-POP <- POP[Time==2050]
+POP <- POP[Time==2014] # Change year [PJD: 2014-year]
 
 w <- POP$PopTotal[1:17]
 
