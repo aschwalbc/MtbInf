@@ -415,6 +415,7 @@ toc()
 # export(mtb,here("data","mtb","Mtb_IHME_norev_nomix_pop_nosc.Rdata")) # IHME - No reversion - No mix - No self-clearance
 # export(mtb,here("data","mtb","Mtb_WHO_norev_nomix_pop_nosc.Rdata")) # WHO - No reversion - No mix - No self-clearance
 
+
 ## PJD: having run above for countries <- c("JPN","IND","CHN")
 names(mtb)
 ari[year==1934]
@@ -429,8 +430,9 @@ test[,LTBIode:=1-value]
 ## based on ARI history
 testa <- ari[acat=='45+' & agegp=='45-49']
 testa <- testa[order(year,decreasing=TRUE),.(iso3,year,ari)]
-testa[,cari:=cumsum(ari),by=iso3 ]
 testa[,age:=2014-year] # Change year [PJD: 2050-year]
+testa <- testa[age>=0] # drop people with negative ages
+testa[,cari:=cumsum(ari),by=iso3 ]
 testa[,LTBI:=1-exp(-cari)]
 testa[,acat:=cut(age,breaks=c(0,maxage),include.lowest=TRUE,right=FALSE)]
 testa <- testa[!is.na(acat),.(LTBI=mean(LTBI)),by=.(iso3,acat)]
