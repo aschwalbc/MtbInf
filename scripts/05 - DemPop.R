@@ -47,11 +47,13 @@ WPP <- WPP %>% # Population data
   mutate(fpop = pop/sum(pop))
 
 WPPb <- WPPb %>% # Birth data
-  rename(iso3 = ISO3_code, year = Time, births = Births) %>%
-  select(iso3,year,births) %>%
+  rename(iso3 = ISO3_code, year = Time, births = Births, pop = TPopulation1Jan) %>%
+  select(iso3,year,births,pop) %>%
   filter(!is.na(iso3)) %>%
   filter(year <= 2050) %>%
-  mutate(births = births*1e3) %>%
+  mutate(births = births*1e3, pop = pop*1e3) %>%
+  mutate(birthrate = births/pop) %>% 
+  select(-pop) %>% 
   mutate(agegp = '00-04')
 
 WPPda <- WPPda %>% # Mortality data (1950-2021)
@@ -92,7 +94,7 @@ WPP <- WPP %>%
   left_join(WPPb, by=c("iso3","year","agegp")) %>%
   inner_join(WPPd, by=c("iso3","year","agegp", "acat")) %>%
   filter(iso3 %in% isos) %>%
-  mutate(mortrate = mort/pop, birthrate = births/pop) %>% 
+  mutate(mortrate = mort/pop) %>% 
   select(-births, -mort)
 rm(WPPb,WPPd,isos)
 
