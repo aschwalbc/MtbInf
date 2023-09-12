@@ -183,9 +183,10 @@ MTBIvsLTBIdiff <- MTBbasWHO %>%
   left_join(LTBI, by = "iso3") %>% 
   select(!type) %>% 
   mutate(diff = tbi - It) %>% 
-  mutate(difftf = ifelse(diff>0,TRUE,FALSE))
+  mutate(difftf = ifelse(diff>0,TRUE,FALSE)) %>% 
+  mutate(pdiff = 1-(It/tbi))
 
-MTBIvsLTBIdiff[MTBIvsLTBIdiff$difftf == FALSE,] # GNQ LBN
+MTBIvsLTBIdiff[MTBIvsLTBIdiff$difftf == FALSE,] # ARE GNQ HUN KWT LBN LUX POL SOM
 
 ggplot() +
   geom_col(data = filter(MTBIvsLTBI, type == "ltbi"), aes(x = iso3, y = tbi), colour = "#CE2931", fill = "#FFFFFF") +
@@ -200,6 +201,27 @@ ggplot() +
   geom_col(data = filter(MTBIvsLTBI, type == "mtbi" & iso3 %in% top30), aes(x = iso3, y = tbi), colour = "#CE2931", fill = "#CE2931") +
   scale_y_continuous(labels = scales::label_number(scale = 1e-6, suffix = "M")) +
   labs(x = "ISO3", y = "Number infected (millions)") +
+  theme_minimal() + 
+  theme(axis.text.x.bottom = element_text(hjust = 1, vjust = 0.5, angle = 90))  
+
+ggplot() +
+  geom_col(data = MTBIvsLTBIdiff, aes(x = iso3, y = diff), colour = "#CE2931", fill = "#CE2931") +
+  scale_y_continuous(labels = scales::label_number(scale = 1e-6, suffix = "M")) +
+  labs(x = "ISO3", y = "Diff. LTBI vs TBI)") +
+  theme_minimal() + 
+  theme(axis.text.x.bottom = element_text(hjust = 1, vjust = 0.5, angle = 90))  
+
+ggplot() +
+  geom_col(data = MTBIvsLTBIdiff, aes(x = iso3, y = pdiff), colour = "#CE2931", fill = "#CE2931") +
+  scale_y_continuous(labels = scales::percent_format(scale = 100)) +
+  labs(x = "ISO3", y = "Diff. LTBI vs TBI)") +
+  theme_minimal() + 
+  theme(axis.text.x.bottom = element_text(hjust = 1, vjust = 0.5, angle = 90)) 
+
+ggplot() +
+  geom_col(data = MTBIvsLTBIdiff, aes(x = reorder(iso3, diff, decreasing = TRUE), y = diff), colour = "#CE2931", fill = "#CE2931") +
+  scale_y_continuous(labels = scales::label_number(scale = 1e-6, suffix = "M")) +
+  labs(x = "ISO3", y = "Diff. LTBI vs TBI)") +
   theme_minimal() + 
   theme(axis.text.x.bottom = element_text(hjust = 1, vjust = 0.5, angle = 90))  
 

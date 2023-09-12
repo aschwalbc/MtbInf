@@ -298,7 +298,7 @@ sis <- function(times, state, parms) {
 times <- seq(from = 0, to = 116, by = 1)
 
 countries <- unique(ARI$iso3) # 166 countries
-countries <- c("JPN","IND","CHN")
+#countries <- c("JPN","IND","CHN")
 #countries <- "JPN"
 list_df <- list()
 
@@ -413,7 +413,7 @@ toc()
 # export(mtb,here("data","mtb","Mtb_IHME_rev_mix_pop_nosc.Rdata")) # IHME - Reversion - Mix - No self-clearance
 # export(mtb,here("data","mtb","Mtb_IHME_norev_mix_pop_nosc.Rdata")) # IHME - No reversion - Mix - No self-clearance
 # export(mtb,here("data","mtb","Mtb_IHME_norev_nomix_pop_nosc.Rdata")) # IHME - No reversion - No mix - No self-clearance
-# export(mtb,here("data","mtb","Mtb_WHO_norev_nomix_pop_nosc.Rdata")) # WHO - No reversion - No mix - No self-clearance
+export(mtb,here("data","mtb","Mtb_WHO_norev_nomix_pop_nosc.Rdata")) # WHO - No reversion - No mix - No self-clearance
 
 
 ## PJD: having run above for countries <- c("JPN","IND","CHN")

@@ -43,7 +43,7 @@ WPP <- WPP %>% # Population data
     agegp %in% c('00-04','05-09','10-14') ~ '0-14',
     agegp %in% c('15-19','20-24','25-29','30-34','35-39','40-44') ~ '15-44',
     agegp %in% c('45-49','50-54','55-59','60-64','65-69','70-74','75-79','80+') ~ '45+')) %>% 
-  group_by(year) %>% 
+  group_by(iso3,year) %>% 
   mutate(fpop = pop/sum(pop))
 
 WPPb <- WPPb %>% # Birth data
