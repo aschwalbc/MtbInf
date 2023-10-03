@@ -316,7 +316,7 @@ ARIwho_na_reg <- ARIwho_reg %>%
   filter(is.na(relari)) %>%
   filter(!is.na(acat)) %>%
   select(year,iso3,lari,upper,lower,acat) %>%
-  bind_rows(ARI_na_acat) %>%
+  bind_rows(ARIwho_na_acat) %>%
   inner_join(WHOkey, by="iso3") %>%
   select(year,iso3,lari,upper,lower,g_whoregion,acat) %>%
   left_join(relARI_reg, by=c("g_whoregion","acat"))
@@ -325,7 +325,7 @@ ARIwho_na <- ARIwho %>%
   filter(is.na(relari)) %>%
   filter(!is.na(acat)) %>%
   select(year,iso3,lari,upper,lower,acat) %>%
-  bind_rows(ARI_na_acat) %>%
+  bind_rows(ARIwho_na_acat) %>%
   inner_join(WHOkey, by="iso3") %>%
   select(year,iso3,lari,upper,lower,g_whoregion,acat) %>%
   left_join(relARI_reg, by=c("g_whoregion","acat"))
