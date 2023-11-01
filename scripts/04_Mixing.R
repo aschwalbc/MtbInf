@@ -17,10 +17,12 @@ MIX <- import(here("data","sources","others","Mixing.Rdata")) # Mixing matrices 
 WHOinc <- import(here("data","sources","who","WHOinc_2019.csv")) # WHO age and sex specific incidence
 WPP <- import(here("data","sources","others","WPP_2020.Rdata")) # World Population Prospects 2020
 WHOkey <- import(here("data","sources","who","WHOkey.csv")) # WHO countries ISO codes and regions
-ARIrev <- as.data.table(import(here("data","gp","GP_IHME_rev.Rdata"))) # IHME Reversion
-ARI <- as.data.table(import(here("data","gp","GP_IHME_norev.Rdata"))) # IHME No reversion
-# ARIwho <- as.data.table(import(here("data","gp","GP_WHO_norev.Rdata"))) # WHO No reversion
-ARIwho <- as.data.table(import(here("data","gp","GP_ARI_FULL.Rdata"))) # WHO No reversion
+# ARIrev <- as.data.table(import(here("data","gp","GP_IHME_rev.Rdata"))) # IHME Reversion
+ARIrev <- as.data.table(import(here("data","gp","GPruns_IHME_rev.Rdata"))) # IHME Reversion - All runs
+# ARI <- as.data.table(import(here("data","gp","GP_IHME_norev.Rdata"))) # IHME No reversion
+ARI <- as.data.table(import(here("data","gp","GPruns_IHME_norev.Rdata"))) # IHME No reversion - All runs
+# ARIwho <- as.data.table(import(here("data","gp","GP_ARI_FULL.Rdata"))) # WHO No reversion
+ARIwho <- as.data.table(import(here("data","gp","GPruns_PMED.Rdata"))) # WHO No reversion - All runs
 
 # 2. Data curation ==========
 MIX <- MIX %>% 
@@ -237,97 +239,97 @@ ARIwho_comp <- ARIwho %>%
 ARIrev_na_acat_reg <- ARIrev_reg %>%
   filter(is.na(relari)) %>%
   filter(is.na(acat)) %>%
-  select(year,iso3,lari,upper,lower) %>%
+  select(year,iso3,lari,replicate) %>%
   slice(rep(row_number(), each=3)) %>%
   mutate(acat = rep(c("0-14","15-44","45+"), length.out = n()))
 
 ARIrev_na_acat <- ARIrev %>%
   filter(is.na(relari)) %>%
   filter(is.na(acat)) %>%
-  select(year,iso3,lari,upper,lower) %>%
+  select(year,iso3,lari,replicate) %>%
   slice(rep(row_number(), each=3)) %>%
   mutate(acat = rep(c("0-14","15-44","45+"), length.out = n()))
 
 ARI_na_acat_reg <- ARI_reg %>%
   filter(is.na(relari)) %>%
   filter(is.na(acat)) %>%
-  select(year,iso3,lari,upper,lower) %>%
+  select(year,iso3,lari,replicate) %>%
   slice(rep(row_number(), each=3)) %>%
   mutate(acat = rep(c("0-14","15-44","45+"), length.out = n()))
 
 ARI_na_acat <- ARI %>%
   filter(is.na(relari)) %>%
   filter(is.na(acat)) %>%
-  select(year,iso3,lari,upper,lower) %>%
+  select(year,iso3,lari,replicate) %>%
   slice(rep(row_number(), each=3)) %>%
   mutate(acat = rep(c("0-14","15-44","45+"), length.out = n()))
 
 ARIwho_na_acat_reg <- ARIwho_reg %>%
   filter(is.na(relari)) %>%
   filter(is.na(acat)) %>%
-  select(year,iso3,lari,upper,lower) %>%
+  select(year,iso3,lari,replicate) %>%
   slice(rep(row_number(), each=3)) %>%
   mutate(acat = rep(c("0-14","15-44","45+"), length.out = n()))
 
 ARIwho_na_acat <- ARIwho %>%
   filter(is.na(relari)) %>%
   filter(is.na(acat)) %>%
-  select(year,iso3,lari,upper,lower) %>%
+  select(year,iso3,lari,replicate) %>%
   slice(rep(row_number(), each=3)) %>%
   mutate(acat = rep(c("0-14","15-44","45+"), length.out = n()))
 
 ARIrev_na_reg <- ARIrev_reg %>%
   filter(is.na(relari)) %>%
   filter(!is.na(acat)) %>%
-  select(year,iso3,lari,upper,lower,acat) %>%
+  select(year,iso3,lari,acat,replicate) %>%
   bind_rows(ARIrev_na_acat) %>%
   inner_join(WHOkey, by="iso3") %>%
-  select(year,iso3,lari,upper,lower,g_whoregion,acat) %>%
+  select(year,iso3,lari,g_whoregion,acat,replicate) %>%
   left_join(relARI_reg, by=c("g_whoregion","acat"))
 
 ARIrev_na <- ARIrev %>%
   filter(is.na(relari)) %>%
   filter(!is.na(acat)) %>%
-  select(year,iso3,lari,upper,lower,acat) %>%
+  select(year,iso3,lari,acat,replicate) %>%
   bind_rows(ARIrev_na_acat) %>%
   inner_join(WHOkey, by="iso3") %>%
-  select(year,iso3,lari,upper,lower,g_whoregion,acat) %>%
+  select(year,iso3,lari,g_whoregion,acat,replicate) %>%
   left_join(relARI_reg, by=c("g_whoregion","acat"))
 
 ARI_na_reg <- ARI_reg %>%
   filter(is.na(relari)) %>%
   filter(!is.na(acat)) %>%
-  select(year,iso3,lari,upper,lower,acat) %>%
+  select(year,iso3,lari,acat,replicate) %>%
   bind_rows(ARI_na_acat) %>%
   inner_join(WHOkey, by="iso3") %>%
-  select(year,iso3,lari,upper,lower,g_whoregion,acat) %>%
+  select(year,iso3,lari,g_whoregion,acat,replicate) %>%
   left_join(relARI_reg, by=c("g_whoregion","acat"))
 
 ARI_na <- ARI %>%
   filter(is.na(relari)) %>%
   filter(!is.na(acat)) %>%
-  select(year,iso3,lari,upper,lower,acat) %>%
+  select(year,iso3,lari,acat,replicate) %>%
   bind_rows(ARI_na_acat) %>%
   inner_join(WHOkey, by="iso3") %>%
-  select(year,iso3,lari,upper,lower,g_whoregion,acat) %>%
+  select(year,iso3,lari,g_whoregion,acat,replicate) %>%
   left_join(relARI_reg, by=c("g_whoregion","acat"))
 
 ARIwho_na_reg <- ARIwho_reg %>%
   filter(is.na(relari)) %>%
   filter(!is.na(acat)) %>%
-  select(year,iso3,lari,upper,lower,acat) %>%
+  select(year,iso3,lari,acat,replicate) %>%
   bind_rows(ARIwho_na_acat) %>%
   inner_join(WHOkey, by="iso3") %>%
-  select(year,iso3,lari,upper,lower,g_whoregion,acat) %>%
+  select(year,iso3,lari,g_whoregion,acat,replicate) %>%
   left_join(relARI_reg, by=c("g_whoregion","acat"))
 
 ARIwho_na <- ARIwho %>%
   filter(is.na(relari)) %>%
   filter(!is.na(acat)) %>%
-  select(year,iso3,lari,upper,lower,acat) %>%
+  select(year,iso3,lari,acat,replicate) %>%
   bind_rows(ARIwho_na_acat) %>%
   inner_join(WHOkey, by="iso3") %>%
-  select(year,iso3,lari,upper,lower,g_whoregion,acat) %>%
+  select(year,iso3,lari,g_whoregion,acat,replicate) %>%
   left_join(relARI_reg, by=c("g_whoregion","acat"))
 
 rm(relARI_glob,relARI_reg,WHOkey,ARIrev,ARIrev_reg,ARIrev_na_acat,ARIrev_na_acat_reg,
@@ -336,68 +338,65 @@ rm(relARI_glob,relARI_reg,WHOkey,ARIrev,ARIrev_reg,ARIrev_na_acat,ARIrev_na_acat
 ARIrevmix_reg <- ARIrev_comp_reg %>%
   bind_rows(ARIrev_na_reg) %>%
   mutate(relari = log(relari)) %>%
-  mutate(lari = lari+relari, upper = upper+relari, lower = lower+relari) %>%
-  mutate(ari = exp(lari), upper = exp(upper), lower = exp(lower)) %>% 
-  select(year,iso3,g_whoregion,acat,ari,upper,lower) %>%
+  mutate(lari = lari+relari) %>%
+  mutate(ari = exp(lari)) %>% 
+  select(year,iso3,g_whoregion,acat,ari,replicate) %>%
   arrange(iso3,year)
 
 ARIrevmix <- ARIrev_comp %>%
   bind_rows(ARIrev_na) %>%
   mutate(relari = log(relari)) %>%
-  mutate(lari = lari+relari, upper = upper+relari, lower = lower+relari) %>%
-  mutate(ari = exp(lari), upper = exp(upper), lower = exp(lower)) %>% 
-  select(year,iso3,g_whoregion,acat,ari,upper,lower) %>%
+  mutate(lari = lari+relari) %>%
+  mutate(ari = exp(lari)) %>% 
+  select(year,iso3,g_whoregion,acat,ari,replicate) %>%
   arrange(iso3,year)
 
 ARImix_reg <- ARI_comp_reg %>%
   bind_rows(ARI_na_reg) %>%
   mutate(relari = log(relari)) %>%
-  mutate(lari = lari+relari, upper = upper+relari, lower = lower+relari) %>%
-  mutate(ari = exp(lari), upper = exp(upper), lower = exp(lower)) %>% 
-  select(year,iso3,g_whoregion,acat,ari,upper,lower) %>%
+  mutate(lari = lari+relari) %>%
+  mutate(ari = exp(lari)) %>% 
+  select(year,iso3,g_whoregion,acat,ari,replicate) %>%
   arrange(iso3,year)
 
 ARImix <- ARI_comp %>%
   bind_rows(ARI_na) %>%
   mutate(relari = log(relari)) %>%
-  mutate(lari = lari+relari, upper = upper+relari, lower = lower+relari) %>%
-  mutate(ari = exp(lari), upper = exp(upper), lower = exp(lower)) %>% 
-  select(year,iso3,g_whoregion,acat,ari,upper,lower) %>%
+  mutate(lari = lari+relari) %>%
+  mutate(ari = exp(lari)) %>% 
+  select(year,iso3,g_whoregion,acat,ari,replicate) %>%
   arrange(iso3,year)
 
 ARIwhomix_reg <- ARIwho_comp_reg %>%
   bind_rows(ARIwho_na_reg) %>%
   mutate(relari = log(relari)) %>%
-  mutate(lari = lari+relari, upper = upper+relari, lower = lower+relari) %>%
-  mutate(ari = exp(lari), upper = exp(upper), lower = exp(lower)) %>% 
-  select(year,iso3,g_whoregion,acat,ari,upper,lower) %>%
+  mutate(lari = lari+relari) %>%
+  mutate(ari = exp(lari)) %>% 
+  select(year,iso3,g_whoregion,acat,ari,replicate) %>%
   arrange(iso3,year)
 
 ARIwhomix <- ARIwho_comp %>%
   bind_rows(ARIwho_na) %>%
   mutate(relari = log(relari)) %>%
-  mutate(lari = lari+relari, upper = upper+relari, lower = lower+relari) %>%
-  mutate(ari = exp(lari), upper = exp(upper), lower = exp(lower)) %>% 
-  select(year,iso3,g_whoregion,acat,ari,upper,lower) %>%
+  mutate(lari = lari+relari) %>%
+  mutate(ari = exp(lari)) %>% 
+  select(year,iso3,g_whoregion,acat,ari,replicate) %>%
   arrange(iso3,year)
 
 ARIrevnomix <- ARIrevmix %>%
-  group_by(year, iso3) %>% 
-  mutate(arix = ari[acat == "0-14"], upperx = upper[acat == "0-14"], lowerx = lower[acat == "0-14"],
-         ari = ifelse(acat != "0-14", arix, ari), upper = ifelse(acat != "0-14", upperx, upper), lower = ifelse(acat != "0-14", lowerx, lower)) %>% 
-  select(-arix, -upperx, -lowerx)
+  group_by(year, iso3, replicate) %>% 
+  mutate(arix = ari[acat == "0-14"], ari = ifelse(acat != "0-14", arix, ari)) %>% 
+  select(-arix)
 
 ARInomix <- ARImix %>%
-  group_by(year, iso3) %>% 
-  mutate(arix = ari[acat == "0-14"], upperx = upper[acat == "0-14"], lowerx = lower[acat == "0-14"],
-         ari = ifelse(acat != "0-14", arix, ari), upper = ifelse(acat != "0-14", upperx, upper), lower = ifelse(acat != "0-14", lowerx, lower)) %>% 
-  select(-arix, -upperx, -lowerx)
+  group_by(year, iso3, replicate) %>% 
+  mutate(arix = ari[acat == "0-14"], ari = ifelse(acat != "0-14", arix, ari)) %>% 
+  select(-arix)
 
 ARIwhonomix <- ARIwhomix %>%
-  group_by(year, iso3) %>% 
-  mutate(arix = ari[acat == "0-14"], upperx = upper[acat == "0-14"], lowerx = lower[acat == "0-14"],
-         ari = ifelse(acat != "0-14", arix, ari), upper = ifelse(acat != "0-14", upperx, upper), lower = ifelse(acat != "0-14", lowerx, lower)) %>% 
-  select(-arix, -upperx, -lowerx)
+  group_by(year, iso3, replicate) %>% 
+  mutate(arix = ari[acat == "0-14"], ari = ifelse(acat != "0-14", arix, ari)) %>% 
+  select(-arix)
   
 rm(WHOinc,WHOinc_reg,ARIrev_comp,ARIrev_comp_reg,ARIrev_na,ARIrev_na_reg,
    ARI_comp,ARI_comp_reg,ARI_na,ARI_na_reg,ARIwho_comp,ARIwho_comp_reg,ARIwho_na,ARIwho_na_reg)

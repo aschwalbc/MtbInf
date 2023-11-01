@@ -15,6 +15,7 @@ library(data.table) # Faster than data.frame
 # ARI <- import(here("data","ari","ARI_IHME_rev_mix_pop.Rdata")) # IHME - Reversion - Mixing
 # ARI <- import(here("data","ari","ARI_IHME_norev_nomix_pop.Rdata")) # IHME - No reversion - No mixing
 ARI <- import(here("data","ari","ARI_WHO_norev_nomix_pop.Rdata")) # WHO - No reversion - No mixing
+export(ARI, here("data","ari","ARI_WHO_norev_nomix_pop.csv"))
 
 # 2. Data curation ==========
 # Extract age group-specific parameters

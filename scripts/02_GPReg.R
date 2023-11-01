@@ -12,15 +12,14 @@ library(MASS) # To simulate from a Multivariate Normal Distribution (mvrnorm)
 library(Matrix) # Extends support of highly dense or sparse matrices
 
 # 1. Load data ==========
-#ARI <- as.data.table(import(here("data","ari","ARI_IHME_norev.Rdata"))) # No reversion
-#ARI <- as.data.table(import(here("data","ari","ARI_IHME_rev.Rdata"))) # Reversion
-ARI <- as.data.table(import(here("data","ari","ARI.Rdata"))) 
-#ARI <- as.data.table(import(here("data","ari","ARI_PMED.Rdata"))) 
-
-ARI_all <- ARI # Creating main - no reversion
+# ARI <- as.data.table(import(here("data","ari","ARI_IHME_norev.Rdata"))) # No reversion
+# ARI <- as.data.table(import(here("data","ari","ARI_IHME_rev.Rdata"))) # Reversion
+# ARI <- as.data.table(import(here("data","ari","ARI.Rdata")))
+ARI <- as.data.table(import(here("data","ari","ARI_PMED.Rdata")))
 
 # 1.1 Data curation
-ARI_all <- ARI_all[ARI_all$logari!=-Inf,] # Remove negative infinity
+ARI_all <- ARI
+ARI_all <- ARI_all[ARI_all$lari!=-Inf,] # Remove negative infinity
 lin <- 1 # CHANGE HERE: Constant (0) or linear (1)
 iso <- unique(as.character(ARI$iso3)) # List unique ISO codes
 
@@ -144,9 +143,9 @@ print(cn)
 ARI <- filter(ARI_all, iso3 == cn)
 
 # 3.2 Time/country vectors
-fyear <- 1950
+fyear <- 1934
 tdz <- ARI$year-fyear
-tez <- 1950:2050 - fyear # Extrapolation times
+tez <- 1934:2050 - fyear # Extrapolation times
 
 ## H as a global
 ## dcnz, tdz, sigz, y as globals
@@ -208,11 +207,11 @@ if(i == 1) {
 # save(runsdf_full,file = here("data","gp","GPruns_IHME_rev.Rdata"))
 
 # Normal
-save(erw_full, file = here("data","gp","GP.Rdata"))
-save(runsdf_full,file = here("data","gp","GPruns.Rdata"))
+# save(erw_full, file = here("data","gp","GP.Rdata"))
+# save(runsdf_full,file = here("data","gp","GPruns.Rdata"))
 
 # PMED
-# save(erw_full, file = here("data","gp","GP_PMED.Rdata"))
-# save(runsdf_full,file = here("data","gp","GPruns_PMED.Rdata"))
+save(erw_full, file = here("data","gp","GP_PMED.Rdata"))
+save(runsdf_full,file = here("data","gp","GPruns_PMED.Rdata"))
 
 rm(list = ls())

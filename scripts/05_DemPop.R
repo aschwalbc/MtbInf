@@ -88,7 +88,7 @@ WPPdb <- WPPdb %>% # Mortality data (2022-2080)
 WPPd <- rbind(WPPda,WPPdb)
 rm(WPPda,WPPdb)
 
-isos <- unique(ARIrev$iso3)
+isos <- unique(ARI$iso3)
 
 WPP <- WPP %>%
   left_join(WPPb, by=c("iso3","year","agegp")) %>%
@@ -108,23 +108,23 @@ isos <- sort(c(unique(WPPt$iso3), "TLS"))
 
 ARIrev <- ARIrev %>%
   filter(!iso3 %in% isos) %>% 
-  left_join(WPP, by=c("year","iso3","acat")) %>%
-  arrange(iso3,year,acat, agegp)
+  inner_join(WPP, by=c("year","iso3","acat"), relationship = 'many-to-many') %>%
+  arrange(iso3,replicate,year,acat,agegp)
 
 ARIrev_nomix <- ARIrev_nomix %>%
   filter(!iso3 %in% isos) %>% 
-  left_join(WPP, by=c("year","iso3","acat")) %>%
-  arrange(iso3,year,acat, agegp)
+  inner_join(WPP, by=c("year","iso3","acat"), relationship = 'many-to-many') %>%
+  arrange(iso3,replicate,year,acat,agegp)
 
 ARI <- ARI %>%
   filter(!iso3 %in% isos) %>% 
-  left_join(WPP, by=c("year","iso3","acat")) %>%
-  arrange(iso3,year,acat, agegp)
+  inner_join(WPP, by=c("year","iso3","acat"), relationship = 'many-to-many') %>%
+  arrange(iso3,replicate,year,acat,agegp)
 
 ARI_nomix <- ARI_nomix %>%
   filter(!iso3 %in% isos) %>% 
-  left_join(WPP, by=c("year","iso3","acat")) %>%
-  arrange(iso3,year,acat, agegp)
+  inner_join(WPP, by=c("year","iso3","acat"), relationship = 'many-to-many') %>%
+  arrange(iso3,replicate,year,acat,agegp)
 
 isos <- sort(c("ABW","AIA","AND","ANT","ASM","ATG","BES","BHS","BLZ","BMU","BRB","BRN","COK",
                "CUW","CYM","DMA","FSM","GRD","GRL","GUM","HKG","ISL","KIR","KNA","LCA","MAC",
@@ -133,7 +133,7 @@ isos <- sort(c("ABW","AIA","AND","ANT","ASM","ATG","BES","BHS","BLZ","BMU","BRB"
 
 isoWPP <- unique(WPP$iso3)
 agegpWPP <- unique(WPP$agegp)
-yearsWPP <- 1933:1949
+yearsWPP <- 1934:1949
 
 WPPexp <- expand.grid(iso3 = isoWPP, year = yearsWPP, agegp = agegpWPP)
 
@@ -152,8 +152,8 @@ WPP <- WPP %>%
 
 ARIwho <- ARIwho %>%
   filter(!iso3 %in% isos) %>% 
-  left_join(WPP, by=c("year","iso3","acat")) %>%
-  arrange(iso3,year,acat, agegp)
+  inner_join(WPP, by=c("year","iso3","acat"), relationship = 'many-to-many') %>%
+  arrange(iso3,replicate,year,acat,agegp)
 rm(WPP, WPPt, isos)
 
 isoihme <- unique(ARI$iso3)
@@ -162,7 +162,7 @@ isowho <- unique(ARIwho$iso3)
 setdiff(isowho, isoihme)
 
 export(ARIrev,here("data","ari","ARI_IHME_rev_mix_pop.Rdata")) # IHME - Reversion - Mixing
-export(ARIrev_nomix,here("data","ari","ARI_IHME_rev_mix_pop.Rdata")) # IHME - Reversion - No mixing
+export(ARIrev_nomix,here("data","ari","ARI_IHME_rev_nomix_pop.Rdata")) # IHME - Reversion - No mixing
 export(ARI,here("data","ari","ARI_IHME_norev_mix_pop.Rdata")) # IHME - No reversion - Mixing
 export(ARI_nomix,here("data","ari","ARI_IHME_norev_nomix_pop.Rdata")) # # IHME - No reversion - No mixing
 export(ARIwho,here("data","ari","ARI_WHO_norev_nomix_pop.Rdata")) # WHO - No reversion - No mixing

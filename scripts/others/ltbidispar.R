@@ -120,3 +120,10 @@ numanapoppmed <- numana %>%
 numana80 <- numana %>% 
   filter(acat == '[80,90]') %>% 
   mutate(pdiff = round(abs(1-(ode/ltbi)),2))
+
+# Top 30
+top30 <- c("IND","CHN","IDN","ZAF","PAK","PHL","NGA","BGD","COD","MMR","ETH","KEN","VNM","TZA","PRK",
+           "THA","RUS","AGO","MOZ","BRA","NPL","UGA","ZMB","AFG","KHM","MDG","CMR","GHA","KOR","UKR")
+
+numanapop30 <- numanapop %>% filter(iso %in% top30)
+numanapoppmed30 <- numanapoppmed %>% filter(iso %in% top30)
