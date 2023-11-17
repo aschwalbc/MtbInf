@@ -33,3 +33,5 @@ vignettes/*.pdf
 .Renviron
 # any temporary data
 *tmpdata/
+
+scripts/pete
