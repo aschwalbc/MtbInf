@@ -17,12 +17,9 @@ MIX <- import(here("data","sources","others","Mixing.Rdata")) # Mixing matrices 
 WHOinc <- import(here("data","sources","who","WHOinc_2019.csv")) # WHO age and sex specific incidence
 WPP <- import(here("data","sources","others","WPP_2020.Rdata")) # World Population Prospects 2020
 WHOkey <- import(here("data","sources","who","WHOkey.csv")) # WHO countries ISO codes and regions
-# ARIrev <- as.data.table(import(here("data","gp","GP_IHME_rev.Rdata"))) # IHME Reversion
 ARIrev <- as.data.table(import(here("data","gp","GPruns_IHME_rev.Rdata"))) # IHME Reversion - All runs
-# ARI <- as.data.table(import(here("data","gp","GP_IHME_norev.Rdata"))) # IHME No reversion
 ARI <- as.data.table(import(here("data","gp","GPruns_IHME_norev.Rdata"))) # IHME No reversion - All runs
-# ARIwho <- as.data.table(import(here("data","gp","GP_ARI_FULL.Rdata"))) # WHO No reversion
-ARIwho <- as.data.table(import(here("data","gp","GPruns_PMED.Rdata"))) # WHO No reversion - All runs
+ARIwho <- as.data.table(import(here("data","gp","GPruns_WHO_norev.Rdata"))) # WHO No reversion - All runs
 
 # 2. Data curation ==========
 MIX <- MIX %>% 
