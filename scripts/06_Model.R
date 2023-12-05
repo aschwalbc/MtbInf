@@ -12,10 +12,9 @@ library(tictoc) # Times code run
 library(data.table) # Faster than data.frame
 
 # 1. Load data ==========
-# ARI <- import(here("data","ari","ARI_IHME_rev_mix_pop.Rdata")) # IHME - Reversion - Mixing
-# ARI <- import(here("data","ari","ARI_IHME_norev_nomix_pop.Rdata")) # IHME - No reversion - No mixing
-ARI <- import(here("data","ari","ARI_WHO_norev_nomix_pop.Rdata")) # WHO - No reversion - No mixing
-export(ARI, here("data","ari","ARI_WHO_norev_nomix_pop.csv"))
+ARI <- import(here("data","ari","mARI_IHME_rev_mix_pop.Rdata")) # IHME - Reversion - Mixing
+ARI <- import(here("data","ari","mARI_IHME_norev_nomix_pop.Rdata")) # IHME - No reversion - No mixing
+ARI <- import(here("data","ari","mARI_WHO_norev_nomix_pop.Rdata")) # WHO - No reversion - No mixing
 
 # 2. Data curation ==========
 # Extract age group-specific parameters
@@ -408,8 +407,9 @@ for (c in 1:(length(countries))){
 mtb <- do.call("rbind",list_df)
 toc()
 
-# export(mtb,here("data","mtb","Mtb_IHME_rev_mix_pop_sc.Rdata")) # IHME - Reversion - Mix - Self-clearance
-# export(mtb,here("data","mtb","Mtb_IHME_rev_mix_pop_nosc.Rdata")) # IHME - Reversion - Mix - No self-clearance
-# export(mtb,here("data","mtb","Mtb_IHME_norev_mix_pop_nosc.Rdata")) # IHME - No reversion - Mix - No self-clearance
-# export(mtb,here("data","mtb","Mtb_IHME_norev_nomix_pop_nosc.Rdata")) # IHME - No reversion - No mix - No self-clearance
-export(mtb,here("data","mtb","Mtb_WHO_norev_nomix_pop_nosc.Rdata")) # WHO - No reversion - No mix - No self-clearance
+# Median run - MtbInf
+# export(mtb,here("data","mtb","mMtb_IHME_rev_mix_pop_sc.Rdata")) # IHME - Reversion - Mix - Self-clearance
+# export(mtb,here("data","mtb","mMtb_IHME_rev_mix_pop_nosc.Rdata")) # IHME - Reversion - Mix - No self-clearance
+# export(mtb,here("data","mtb","mMtb_IHME_norev_mix_pop_nosc.Rdata")) # IHME - No reversion - Mix - No self-clearance
+# export(mtb,here("data","mtb","mMtb_IHME_norev_nomix_pop_nosc.Rdata")) # IHME - No reversion - No mix - No self-clearance
+export(mtb,here("data","mtb","mMtb_WHO_norev_nomix_pop_nosc.Rdata")) # WHO - No reversion - No mix - No self-clearance
