@@ -12,10 +12,9 @@ library(MASS) # To simulate from a Multivariate Normal Distribution (mvrnorm)
 library(Matrix) # Extends support of highly dense or sparse matrices
 
 # 1. Load data ==========
-# ARI <- as.data.table(import(here("data","ari","ARI_IHME_norev.Rdata"))) # No reversion
-# ARI <- as.data.table(import(here("data","ari","ARI_IHME_rev.Rdata"))) # Reversion
-# ARI <- as.data.table(import(here("data","ari","ARI.Rdata")))
-ARI <- as.data.table(import(here("data","ari","ARI_PMED.Rdata")))
+ARI <- as.data.table(import(here("data","ari","ARI_IHME_norev.Rdata"))) # No reversion
+ARI <- as.data.table(import(here("data","ari","ARI_IHME_rev.Rdata"))) # Reversion
+ARI <- as.data.table(import(here("data","ari","ARI_PMED.Rdata"))) # PMED Baseline check
 
 # 1.1 Data curation
 ARI_all <- ARI
@@ -199,16 +198,12 @@ if(i == 1) {
 
 # Save output
 # No reversion
-# save(erw_full, file = here("data","gp","GP_IHME_norev.Rdata"))
-# save(runsdf_full,file = here("data","gp","GPruns_IHME_norev.Rdata"))
+save(erw_full, file = here("data","gp","GP_IHME_norev.Rdata"))
+save(runsdf_full,file = here("data","gp","GPruns_IHME_norev.Rdata"))
 
 # Reversion
-# save(erw_full, file = here("data","gp","GP_IHME_rev.Rdata"))
-# save(runsdf_full,file = here("data","gp","GPruns_IHME_rev.Rdata"))
-
-# Normal
-# save(erw_full, file = here("data","gp","GP.Rdata"))
-# save(runsdf_full,file = here("data","gp","GPruns.Rdata"))
+save(erw_full, file = here("data","gp","GP_IHME_rev.Rdata"))
+save(runsdf_full,file = here("data","gp","GPruns_IHME_rev.Rdata"))
 
 # PMED
 save(erw_full, file = here("data","gp","GP_PMED.Rdata"))
