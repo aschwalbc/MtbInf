@@ -210,3 +210,4 @@ save(erw_full, file = here("data","gp","GP_PMED_norev.Rdata"))
 save(runsdf_full,file = here("data","gp","GPruns_PMED_norev.Rdata"))
 
 rm(list = ls())
+detach(package:MASS, unload=TRUE) # Detach due to issues with tidyverse "select" 
