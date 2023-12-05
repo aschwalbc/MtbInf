@@ -14,7 +14,7 @@ library(Matrix) # Extends support of highly dense or sparse matrices
 # 1. Load data ==========
 ARI <- as.data.table(import(here("data","ari","ARI_IHME_norev.Rdata"))) # No reversion
 ARI <- as.data.table(import(here("data","ari","ARI_IHME_rev.Rdata"))) # Reversion
-ARI <- as.data.table(import(here("data","ari","ARI_PMED_norev.Rdata"))) # PMED Baseline check
+ARI <- as.data.table(import(here("data","ari","ARI_WHO_norev.Rdata"))) # PMED Baseline check
 
 # 1.1 Data curation
 ARI_all <- ARI
@@ -205,9 +205,9 @@ save(runsdf_full,file = here("data","gp","GPruns_IHME_norev.Rdata"))
 save(erw_full, file = here("data","gp","GP_IHME_rev.Rdata"))
 save(runsdf_full,file = here("data","gp","GPruns_IHME_rev.Rdata"))
 
-# PMED
-save(erw_full, file = here("data","gp","GP_PMED_norev.Rdata"))
-save(runsdf_full,file = here("data","gp","GPruns_PMED_norev.Rdata"))
+# WHO - PMED
+save(erw_full, file = here("data","gp","GP_WHO_norev.Rdata"))
+save(runsdf_full,file = here("data","gp","GPruns_WHO_norev.Rdata"))
 
 rm(list = ls())
 detach(package:MASS, unload=TRUE) # Detach due to issues with tidyverse "select" 
