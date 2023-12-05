@@ -14,7 +14,7 @@ library(Matrix) # Extends support of highly dense or sparse matrices
 # 1. Load data ==========
 ARI <- as.data.table(import(here("data","ari","ARI_IHME_norev.Rdata"))) # No reversion
 ARI <- as.data.table(import(here("data","ari","ARI_IHME_rev.Rdata"))) # Reversion
-ARI <- as.data.table(import(here("data","ari","ARI_PMED.Rdata"))) # PMED Baseline check
+ARI <- as.data.table(import(here("data","ari","ARI_PMED_norev.Rdata"))) # PMED Baseline check
 
 # 1.1 Data curation
 ARI_all <- ARI
