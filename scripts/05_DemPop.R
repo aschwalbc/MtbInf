@@ -110,21 +110,29 @@ ARIrev <- ARIrev %>%
   filter(!iso3 %in% isos) %>% 
   inner_join(WPP, by=c("year","iso3","acat"), relationship = 'many-to-many') %>%
   arrange(iso3,replicate,year,acat,agegp)
+export(ARIrev, here("data","ari","ARI_IHME_rev_mix_pop.Rdata")) # IHME - Reversion - Mixing
+rm(ARIrev)
 
 ARIrev_nomix <- ARIrev_nomix %>%
   filter(!iso3 %in% isos) %>% 
   inner_join(WPP, by=c("year","iso3","acat"), relationship = 'many-to-many') %>%
   arrange(iso3,replicate,year,acat,agegp)
+export(ARIrev_nomix, here("data","ari","ARI_IHME_rev_nomix_pop.Rdata")) # IHME - Reversion - No mixing
+rm(ARIrev_nomix)
 
 ARI <- ARI %>%
   filter(!iso3 %in% isos) %>% 
   inner_join(WPP, by=c("year","iso3","acat"), relationship = 'many-to-many') %>%
   arrange(iso3,replicate,year,acat,agegp)
+export(ARI, here("data","ari","ARI_IHME_norev_mix_pop.Rdata")) # IHME - No reversion - Mixing
+rm(ARI)
 
 ARI_nomix <- ARI_nomix %>%
   filter(!iso3 %in% isos) %>% 
   inner_join(WPP, by=c("year","iso3","acat"), relationship = 'many-to-many') %>%
   arrange(iso3,replicate,year,acat,agegp)
+export(ARI_nomix, here("data","ari","ARI_IHME_norev_nomix_pop.Rdata")) # # IHME - No reversion - No mixing
+rm(ARI_nomix)
 
 isos <- sort(c("ABW","AIA","AND","ANT","ASM","ATG","BES","BHS","BLZ","BMU","BRB","BRN","COK",
                "CUW","CYM","DMA","FSM","GRD","GRL","GUM","HKG","ISL","KIR","KNA","LCA","MAC",
@@ -155,15 +163,6 @@ ARIwho <- ARIwho %>%
   inner_join(WPP, by=c("year","iso3","acat"), relationship = 'many-to-many') %>%
   arrange(iso3,replicate,year,acat,agegp)
 rm(WPP, WPPt, isos)
+export(ARIwho, here("data","ari","ARI_WHO_norev_nomix_pop.Rdata")) # WHO - No reversion - No mixing
 
-isoihme <- unique(ARI$iso3)
-isowho <- unique(ARIwho$iso3)
-
-setdiff(isowho, isoihme)
-
-export(ARIrev,here("data","ari","ARI_IHME_rev_mix_pop.Rdata")) # IHME - Reversion - Mixing
-export(ARIrev_nomix,here("data","ari","ARI_IHME_rev_nomix_pop.Rdata")) # IHME - Reversion - No mixing
-export(ARI,here("data","ari","ARI_IHME_norev_mix_pop.Rdata")) # IHME - No reversion - Mixing
-export(ARI_nomix,here("data","ari","ARI_IHME_norev_nomix_pop.Rdata")) # # IHME - No reversion - No mixing
-export(ARIwho,here("data","ari","ARI_WHO_norev_nomix_pop.Rdata")) # WHO - No reversion - No mixing
 rm(list=ls())
