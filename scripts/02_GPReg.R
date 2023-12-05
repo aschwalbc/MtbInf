@@ -206,7 +206,7 @@ save(erw_full, file = here("data","gp","GP_IHME_rev.Rdata"))
 save(runsdf_full,file = here("data","gp","GPruns_IHME_rev.Rdata"))
 
 # PMED
-save(erw_full, file = here("data","gp","GP_PMED.Rdata"))
-save(runsdf_full,file = here("data","gp","GPruns_PMED.Rdata"))
+save(erw_full, file = here("data","gp","GP_PMED_norev.Rdata"))
+save(runsdf_full,file = here("data","gp","GPruns_PMED_norev.Rdata"))
 
 rm(list = ls())
