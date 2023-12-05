@@ -10,11 +10,16 @@ library(tidyverse) # To use tidyverse
 library(ggplot2) # To build comparative plots
 
 # 1. Load data ==========
-ARI <- import(here("data","ari","ARI_IHME_norev_mix.Rdata"))
-ARI_nomix <- import(here("data","ari","ARI_IHME_norev_nomix.Rdata"))
-ARIrev <- import(here("data","ari","ARI_IHME_rev_mix.Rdata"))
-ARIrev_nomix <- import(here("data","ari","ARI_IHME_rev_nomix.Rdata"))
-ARIwho <- import(here("data","ari","ARI_WHO_norev_nomix.Rdata"))
+# ARI <- import(here("data","ari","ARI_IHME_norev_mix.Rdata"))
+# ARI_nomix <- import(here("data","ari","ARI_IHME_norev_nomix.Rdata"))
+# ARIrev <- import(here("data","ari","ARI_IHME_rev_mix.Rdata"))
+# ARIrev_nomix <- import(here("data","ari","ARI_IHME_rev_nomix.Rdata"))
+# ARIwho <- import(here("data","ari","ARI_WHO_norev_nomix.Rdata"))
+ARI <- import(here("data","ari","mARI_IHME_norev_mix.Rdata"))
+ARI_nomix <- import(here("data","ari","mARI_IHME_norev_nomix.Rdata"))
+ARIrev <- import(here("data","ari","mARI_IHME_rev_mix.Rdata"))
+ARIrev_nomix <- import(here("data","ari","mARI_IHME_rev_nomix.Rdata"))
+ARIwho <- import(here("data","ari","mARI_WHO_norev_nomix.Rdata"))
 WPP <- import(here("data","sources","pop","WPP_Pop_1950-2100.csv"))
 WPPb <- import(here("data","sources","pop","WPP_Births_1950-2100.csv"))
 WPPda <- import(here("data","sources","pop","WPP_Deaths_1950-2021.csv"))
@@ -109,29 +114,37 @@ isos <- sort(c(unique(WPPt$iso3), "TLS"))
 ARIrev <- ARIrev %>%
   filter(!iso3 %in% isos) %>% 
   inner_join(WPP, by=c("year","iso3","acat"), relationship = 'many-to-many') %>%
-  arrange(iso3,replicate,year,acat,agegp)
-export(ARIrev, here("data","ari","ARI_IHME_rev_mix_pop.Rdata")) # IHME - Reversion - Mixing
+  # arrange(iso3,replicate,year,acat,agegp)
+  arrange(iso3,year,acat,agegp)
+# export(ARIrev, here("data","ari","ARI_IHME_rev_mix_pop.Rdata")) # IHME - Reversion - Mixing
+export(ARIrev, here("data","ari","mARI_IHME_rev_mix_pop.Rdata")) # IHME - Reversion - Mixing
 rm(ARIrev)
 
 ARIrev_nomix <- ARIrev_nomix %>%
   filter(!iso3 %in% isos) %>% 
   inner_join(WPP, by=c("year","iso3","acat"), relationship = 'many-to-many') %>%
-  arrange(iso3,replicate,year,acat,agegp)
-export(ARIrev_nomix, here("data","ari","ARI_IHME_rev_nomix_pop.Rdata")) # IHME - Reversion - No mixing
+  # arrange(iso3,replicate,year,acat,agegp)
+  arrange(iso3,year,acat,agegp)
+# export(ARIrev_nomix, here("data","ari","ARI_IHME_rev_nomix_pop.Rdata")) # IHME - Reversion - No mixing
+export(ARIrev_nomix, here("data","ari","mARI_IHME_rev_nomix_pop.Rdata")) # IHME - Reversion - No mixing
 rm(ARIrev_nomix)
 
 ARI <- ARI %>%
   filter(!iso3 %in% isos) %>% 
   inner_join(WPP, by=c("year","iso3","acat"), relationship = 'many-to-many') %>%
-  arrange(iso3,replicate,year,acat,agegp)
-export(ARI, here("data","ari","ARI_IHME_norev_mix_pop.Rdata")) # IHME - No reversion - Mixing
+  # arrange(iso3,replicate,year,acat,agegp)
+  arrange(iso3,year,acat,agegp)
+# export(ARI, here("data","ari","ARI_IHME_norev_mix_pop.Rdata")) # IHME - No reversion - Mixing
+export(ARI, here("data","ari","mARI_IHME_norev_mix_pop.Rdata")) # IHME - No reversion - Mixing
 rm(ARI)
 
 ARI_nomix <- ARI_nomix %>%
   filter(!iso3 %in% isos) %>% 
   inner_join(WPP, by=c("year","iso3","acat"), relationship = 'many-to-many') %>%
-  arrange(iso3,replicate,year,acat,agegp)
-export(ARI_nomix, here("data","ari","ARI_IHME_norev_nomix_pop.Rdata")) # # IHME - No reversion - No mixing
+  # arrange(iso3,replicate,year,acat,agegp)
+  arrange(iso3,year,acat,agegp)
+# export(ARI_nomix, here("data","ari","ARI_IHME_norev_nomix_pop.Rdata")) # # IHME - No reversion - No mixing
+export(ARI_nomix, here("data","ari","mARI_IHME_norev_nomix_pop.Rdata")) # # IHME - No reversion - No mixing
 rm(ARI_nomix)
 
 isos <- sort(c("ABW","AIA","AND","ANT","ASM","ATG","BES","BHS","BLZ","BMU","BRB","BRN","COK",
@@ -161,8 +174,10 @@ WPP <- WPP %>%
 ARIwho <- ARIwho %>%
   filter(!iso3 %in% isos) %>% 
   inner_join(WPP, by=c("year","iso3","acat"), relationship = 'many-to-many') %>%
-  arrange(iso3,replicate,year,acat,agegp)
+  # arrange(iso3,replicate,year,acat,agegp)
+  arrange(iso3,year,acat,agegp)
 rm(WPP, WPPt, isos)
-export(ARIwho, here("data","ari","ARI_WHO_norev_nomix_pop.Rdata")) # WHO - No reversion - No mixing
+# export(ARIwho, here("data","ari","ARI_WHO_norev_nomix_pop.Rdata")) # WHO - No reversion - No mixing
+export(ARIwho, here("data","ari","mARI_WHO_norev_nomix_pop.Rdata")) # WHO - No reversion - No mixing
 
 rm(list=ls())
