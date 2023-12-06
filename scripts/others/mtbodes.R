@@ -1,26 +1,59 @@
-## odin version of Mtb equations
-## ds(a)/dt = delta_a1 * b N/N(a) *(1-s) + alph * (1-delta_1a)*[s(a-1)-s(a)] * N(a-1)/N(a)
-##              sum_j rho^j(a) i^j(a) - l(a) s
-##
-## di^j(a)/dt = l(a)s(a)delta_1j - g^j i^j(a) + g^(j-1)i^(j-1)(a) (1-delta_1j)
-##               -rho^j i^j + alph * (1-delta_1a) * (i^j(a-1)-i^j(a)) * N(a-1)/N(a)
-##                -i^j(a)delta_1a bN/N(a)
+## Analysis code for Schwalb et al. 2023
+## Created by P Dodd
+## Distributed under CC BY 4.0
+## RScript: mtbodes.R
 
-## use: i for age; j for j
+# 1. Equations (Odin) ==========
 
-## -------- parameters -------
-## fixed
-Nj <- 4
-Na <- 17
-alph <- 0.2
-## data inputs for interpolation
-time_data[] <- user()
-F_data[,] <- user()
-b_data[] <- user()
-lam_data[,] <- user()
-## other inputs
-rho[] <- user()
-g[] <- user()
+# 1.1 Susceptible (dS(a)/dt)
+
+# Block A: + krondelta_a1 * theta * 1/frac(a) * [1 - S(a)] 
+# Kronecker delta * birth rate * fraction of the population in age group * infected population of age group
+
+# Block B: + (1-krondelta_a1) * alpha * [S(a-1) - S(a)] * frac(a-1)/frac(a)
+# Kronecker delta * age transitions * difference of susceptible population between age groups * population fraction ratio
+
+# Block C: + sum_j [gamma^j(a) * I^j(a)] 
+# Sum of self-clearance from all infected compartments
+
+# Block D: - lambda(a) * S(a)
+# Infection per ARI * all susceptible population 
+
+# 1.2 Infected (dI^j(a)/dt)
+
+# Block E: + krondelta_1j * lambda(a) * S(a) 
+# Kronecker delta * infection per ARI * all susceptible population
+
+# Block F: - kappa^j * I^j(a)
+# Transition out of year of infection (no transition if j = 3) * infected population in year of infection
+
+# Block G: + (1-krondelta_1j) * kappa^(j-1) * I^(j-1)(a)
+# Kronecker delta * transition into year of infection * infected population in previous year of infection
+
+# Block H: - gamma^j * I^j(a)
+# Self-clearance for infection year * infected population in year of infection
+
+# Block I: + (1-krondelta_1a) * alpha * [I^j(a-1) - I^j(a)] * frac(a-1)/frac(a)
+# Kronecker delta * age transition * difference of infected population between age groups * population fraction ratio
+
+# Block J: - krondelta_1a * I^j(a) * theta * 1/frac(a)
+# Kronecker delta * infected population in year of infection * birth rate * fraction of the population in age group
+
+# 2. Parameters ==========
+# 2.1 Fixed
+Na <- 17 # Number of age groups (5y age groups, up to 80+)
+Nj <- 4 # Number of infection years (1, 2, 3-9, 10+)
+alpha <- 1/5 # Age transition 
+
+# 2.2 Interpolation inputs
+time_data[] <- user() # Time data
+frac_data[,] <- user() # Population fraction
+theta_data[] <- user() # Birth rate
+lambda_data[,] <- user() # Annual risk of infection
+
+# 2.3 Others
+gamma[] <- user() # Self-clearance
+kappa[] <- user() # Infected year transition
 
 ## -------- dynamics -------
 ## deriv(S[]) <- ageDelt[i] * (b/F[i]) * (1-S[i]) +
@@ -70,4 +103,3 @@ dim(rho) <- Nj
 
 dim(rhoI) <- c(Na,Nj)
 dim(Sfrac) <- c(Na)
-
