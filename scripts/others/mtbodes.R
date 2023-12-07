@@ -55,51 +55,44 @@ lambda_data[,] <- user() # Annual risk of infection
 gamma[] <- user() # Self-clearance
 kappa[] <- user() # Infected year transition
 
-## -------- dynamics -------
-## deriv(S[]) <- ageDelt[i] * (b/F[i]) * (1-S[i]) +
-##   alph * (1-ageDelt[i]) * (S[i-1]-S[i]) * (F[i-1]/F[i]) +
-##   sum(rhoI[i,]) - lam[i] * S[i]
-deriv(S[1]) <-  (b/F[1]) * (1-S[1]) + sum(rhoI[1,]) - lam[1] * S[1]
-deriv(S[2:Na]) <- alph * (S[i-1]-S[i]) * (F[i-1]/F[i]) + sum(rhoI[i,]) - lam[i] * S[i]
+# 3. Dynamics ========== 
+# Using i for age groups and j for infected years
 
+# 3.1 Susceptible
+deriv(S[1]) <- (theta/frac[1]) * (1 - S[1]) + sum(gammaI[1,]) - lambda[1] * S[1] # 00-04 age group
+deriv(S[2:Na]) <- alpha * (S[i-1] - S[i]) * (frac[i-1]/frac[i]) + sum(gammaI[i,]) - lambda[i] * S[i] # All other age groups
 
-## deriv(I[,]) <- lam[i] * S[i] * JDelt[j] - g[j] * I[i,j] + g[j-1] * I[i,j-1] * (1-DeltJ[j])-
-##   rhoI[i,j] + alph * (1-deltAge[i]) * (I[i-1,j]-I[i,j]) * (F[i-1]/F[i])-
-##   I[i,j] * ageDelt[i] * (b/F[i])
-deriv(I[1,1]) <- lam[1] * S[1] - g[1] * I[1,1] - rhoI[1,1] - I[1,1]  * (b/F[1])
-deriv(I[1,2:Nj]) <-  - g[j] * I[1,j] + g[j-1] * I[1,j-1] - rhoI[1,j] - I[1,j] * (b/F[1])
-deriv(I[2:Na,1]) <- lam[i]*S[i]  - g[1] * I[i,1] - rhoI[i,1] + alph *  (I[i-1,1]-I[i,1]) * (F[i-1]/F[i])
-deriv(I[2:Na,2:Nj]) <- -g[j]*I[i,j] + g[j-1]*I[i,j-1] - rhoI[i,j] + alph*(I[i-1,j]-I[i,j])*(F[i-1]/F[i])
+# 3.2 Infected
+deriv(I[1,1]) <- lambda[1] * S[1] - kappa[1] * I[1,1] - gammaI[1,1] - I[1,1]  * (theta/frac[1]) # 00-04 age group - Infection year 1
+deriv(I[1,2:Nj]) <- - kappa[j] * I[1,j] + kappa[j-1] * I[1,j-1] - gammaI[1,j] - I[1,j] * (theta/frac[1]) # 00-04 age group - Other infection years
+deriv(I[2:Na,1]) <- lambda[i] * S[i] - kappa[1] * I[i,1] - gammaI[i,1] + alpha * (I[i-1,1] - I[i,1]) * (frac[i-1]/frac[i]) # Other age groups - Infection year 1
+deriv(I[2:Na,2:Nj]) <- -kappa[j] * I[i,j] + kappa[j-1] * I[i,j-1] - gammaI[i,j] + alpha * (I[i-1,j] - I[i,j]) * (frac[i-1]/frac[i]) # Other age groups - Other infection years
 
+# 3.3 Definitions
+gammaI[,] <- gamma[j] * I[i,j] # Self-clearance of infection year
+Sfrac[] <- exp( -lambda_data[1,i] * (5*i-2.5) ) # Proportion susceptible
+ST <- sum(Sfrac) # Sum of all susceptibles
 
-## -------- definitions
-rhoI[,] <- rho[j] * I[i,j]
-Sfrac[] <- exp( -lam_data[1,i] * (5*i-2.5) )
-ST <- sum(Sfrac)
+# 3.4 Initial states 
+initial(S[]) <- Sfrac[i]/ST # Susceptible
+initial(I[,]) <- (1-Sfrac[i]/ST)/Nj # Infected
 
-## -------- initial state -------
-initial(S[]) <- Sfrac[i]/ST
-initial(I[,]) <- (1-Sfrac[i]/ST)/Nj
+# 3.5 Interpolation
+frac[] <- interpolate(time_data, frac_data, 'linear') # Population fraction
+lambda[] <- interpolate(time_data, lambda_data, 'linear') # Annual risk of infection
+theta <- interpolate(time_data, theta_data, 'linear') # Birth rate
 
-## -------- interpolation -------
-F[] <- interpolate(time_data,F_data,'linear')
-lam[] <- interpolate(time_data,lam_data,'linear')
-b <- interpolate(time_data,b_data,'linear')
-
-## -------- dimensions -------
-dim(I) <- c(Na,Nj)
-dim(S) <- Na
-dim(F) <- Na
-dim(lam) <- Na
-
-dim(time_data) <- user()
-len_time_data <- length(time_data)
-dim(F_data) <- c(len_time_data,Na)
-dim(lam_data) <- c(len_time_data,Na)
-dim(b_data) <- len_time_data
-
-dim(g) <- Nj
-dim(rho) <- Nj
-
-dim(rhoI) <- c(Na,Nj)
-dim(Sfrac) <- c(Na)
+# 3.6 Dimensions
+dim(I) <- c(Na, Nj) # Infected per age group (Na) and infection year (Nj)
+dim(S) <- Na # Susceptible per age group (Na)
+dim(frac) <- Na # Population fraction per age group (Na)
+dim(lambda) <- Na # Annual risk of infection per age group (Na)
+dim(time_data) <- user() # Time data
+len_time_data <- length(time_data) # Length time data
+dim(frac_data) <- c(len_time_data, Na) # Population fraction interpolation
+dim(lambda_data) <- c(len_time_data, Na) # Annual risk of infection interpolation
+dim(theta_data) <- len_time_data # Birth rate interpolation
+dim(gamma) <- Nj # Self-clearance per infection year (Nj)
+dim(gammaI) <- c(Na, Nj) # Self-clearance per age group (Na) and infection year (Nj)
+dim(kappa) <- Nj # Infection year transition per infection year
+dim(Sfrac) <- Na # Proportion susceptible per age group
