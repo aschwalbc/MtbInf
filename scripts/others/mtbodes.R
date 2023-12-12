@@ -66,7 +66,7 @@ deriv(S[2:Na]) <- alpha * (S[i-1] - S[i]) * (frac[i-1]/frac[i]) + sum(gammaI[i,]
 deriv(I[1,1]) <- lambda[1] * S[1] - kappa[1] * I[1,1] - gammaI[1,1] - I[1,1]  * (theta/frac[1]) # 00-04 age group - Infection year 1
 deriv(I[1,2:Nj]) <- - kappa[j] * I[1,j] + kappa[j-1] * I[1,j-1] - gammaI[1,j] - I[1,j] * (theta/frac[1]) # 00-04 age group - Other infection years
 deriv(I[2:Na,1]) <- lambda[i] * S[i] - kappa[1] * I[i,1] - gammaI[i,1] + alpha * (I[i-1,1] - I[i,1]) * (frac[i-1]/frac[i]) # Other age groups - Infection year 1
-deriv(I[2:Na,2:Nj]) <- -kappa[j] * I[i,j] + kappa[j-1] * I[i,j-1] - gammaI[i,j] + alpha * (I[i-1,j] - I[i,j]) * (frac[i-1]/frac[i]) # Other age groups - Other infection years
+deriv(I[2:Na,2:Nj]) <- - kappa[j] * I[i,j] + kappa[j-1] * I[i,j-1] - gammaI[i,j] + alpha * (I[i-1,j] - I[i,j]) * (frac[i-1]/frac[i]) # Other age groups - Other infection years
 
 # 3.3 Definitions
 gammaI[,] <- gamma[j] * I[i,j] # Self-clearance of infection year
@@ -82,9 +82,9 @@ initial(S[]) <- Sfrac[i]/ST # Susceptible
 initial(I[,]) <- (1-Sfrac[i]) * ratios[i,j]/rationorm[i] # Infected
 
 # 3.5 Interpolation
-frac[] <- interpolate(time_data, frac_data, 'linear') # Population fraction
-lambda[] <- interpolate(time_data, lambda_data, 'linear') # Annual risk of infection
-theta <- interpolate(time_data, theta_data, 'linear') # Birth rate
+frac[] <- interpolate(time_data, frac_data, 'spline') # Population fraction
+lambda[] <- interpolate(time_data, lambda_data, 'spline') # Annual risk of infection
+theta <- interpolate(time_data, theta_data, 'spline') # Birth rate
 
 # 3.6 Dimensions
 dim(I) <- c(Na, Nj) # Infected per age group (Na) and infection year (Nj)
