@@ -115,12 +115,6 @@ gdfpopo <- df %>%
   group_by(iso3) %>%
   summarise(odepop = sum(odepop), ltbipop = sum(ltbipop))
 
-gODE_POP <- round(sum(gdfPOP$odepop), 0)
-prevODE_POP <- round((gODE_POP/gPOP)*1e2, 1)
-
-gLTBI_POP <- round(sum(gdfPOP$ltbipop), 0)
-prevLTBI_POP <- round((gLTBI_POP/gPOP)*1e2, 1)
-
 # 4.2 PMED WPP (POP) - Weight by population
 # Weight by population (PMED WPP)
 POP_PM <- POP_PM %>% 
@@ -165,8 +159,11 @@ tiff(here("plots", "LTBIdiscrep_ODE.tiff"), height = 1000, width = 1400, res = 3
 ggplot() +
   geom_point(aes(x = df$ode, y = df$ltbi), size = 0.5) +
   geom_abline(intercept = 0, slope = 1, color = "red") +
+  geom_abline(intercept = 0.10, slope = 1, color = "red", linetype = 'dashed') +
+  geom_abline(intercept = -0.10, slope = 1, color = "red", linetype = 'dashed') +
   scale_x_continuous(labels = scales::percent_format()) +
   scale_y_continuous(labels = scales::percent_format()) +
+  coord_cartesian(xlim = c(0,1), ylim = c(0,1)) +
   labs(x = "Numerical approach (ODE)", y = "Analytical approach (ARI)") +
   theme_bw()
 dev.off()
@@ -180,6 +177,7 @@ ggplot() +
   geom_abline(intercept = -0.10, slope = 1, color = "red", linetype = 'dashed') +
   scale_x_continuous(labels = scales::percent_format()) +
   scale_y_continuous(labels = scales::percent_format()) +
+  coord_cartesian(xlim = c(0,1), ylim = c(0,1)) +
   labs(x = "Numerical approach (ODIN)", y = "Analytical approach (ARI)") +
   theme_bw()
 dev.off()

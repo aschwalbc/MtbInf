@@ -45,7 +45,7 @@ parms <- list(time_data = years,
   theta_data = ari[iso3 == iso & year %in% years & agegp == '00-04', birthrate],
   lambda_data = as.matrix(dcast(data = ari[iso3 == iso & year %in% years, .(year, agegp, ari)], year ~ agegp, value.var = 'ari'))[,-1],
   gamma = c(gamma_a, gamma_b, gamma_c, gamma_d),
-  kappa = c(kappa_ab,kappa_bc,kappa_cd,0))
+  kappa = c(kappa_ab, kappa_bc, kappa_cd, 0))
 
 # 4.3 Generate model
 md <- mod$new(user = parms)
