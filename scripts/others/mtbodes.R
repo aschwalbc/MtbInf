@@ -75,7 +75,7 @@ ST <- sum(Sfrac) # Sum of all susceptibles
 
 # 3.4 Initial states 
 initial(S[]) <- Sfrac[i]/ST # Susceptible
-initial(I[,]) <- (1-Sfrac[i]/ST)/Nj # Infected
+initial(I[,]) <- (1-Sfrac[i]/ST)/Nj # Infected **NEED TO RECHECK**
 
 # 3.5 Interpolation
 frac[] <- interpolate(time_data, frac_data, 'linear') # Population fraction
