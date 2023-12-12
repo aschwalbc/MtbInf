@@ -82,9 +82,9 @@ initial(S[]) <- Sfrac[i]/ST # Susceptible
 initial(I[,]) <- (1-Sfrac[i]) * ratios[i,j]/rationorm[i] # Infected
 
 # 3.5 Interpolation
-frac[] <- interpolate(time_data, frac_data, 'constant') # Population fraction
-lambda[] <- interpolate(time_data, lambda_data, 'constant') # Annual risk of infection
-theta <- interpolate(time_data, theta_data, 'constant') # Birth rate
+frac[] <- interpolate(time_data, frac_data, 'spline') # Population fraction
+lambda[] <- interpolate(time_data, lambda_data, 'spline') # Annual risk of infection
+theta <- interpolate(time_data, theta_data, 'spline') # Birth rate
 
 # 3.6 Dimensions
 dim(I) <- c(Na, Nj) # Infected per age group (Na) and infection year (Nj)
