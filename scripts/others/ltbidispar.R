@@ -107,8 +107,8 @@ dfpop <- df %>%
   mutate(pdiff = round((1-(wavg_ode/wavg_ltbi)),4),
          adiff = round((wavg_ode-wavg_ltbi),4))
 
-gdfpopo <- df %>% 
-  left_join(POP, by = c("iso3","acat")) %>% 
+gdfpop <- df %>% 
+  left_join(pop, by = c("iso3","acat")) %>% 
   mutate(odepop = ode*pop, ltbipop = ltbi*pop) %>% 
   group_by(iso3, acat) %>%
   summarise(odepop = sum(odepop), ltbipop = sum(ltbipop)) %>% 
@@ -117,7 +117,7 @@ gdfpopo <- df %>%
 
 # 4.2 PMED WPP (POP) - Weight by population
 # Weight by population (PMED WPP)
-POP_PM <- POP_PM %>% 
+poppm <- poppm %>% 
   filter(iso3 %in% iso) %>% 
   rename(acat = age, pop = value) %>% 
   select(iso3, acat, pop) %>% 
@@ -129,29 +129,23 @@ POP_PM <- POP_PM %>%
                           acat == '60-64' ~ '[60,65)', acat == '65-69' ~ '[65,70)', acat == '70-74' ~ '[70,75)',
                           acat == '75-79' ~ '[75,80)', acat == '80-' ~ '[80,90]'))
 
-gPOP_PM <- sum(POP_PM$pop) # 7224311000
+gpoppm <- sum(poppm$pop) # 7224311000
 
-dfPOP_PM <- df %>% 
-  left_join(POP_PM, by = c("iso3","acat")) %>% 
+dfpoppm <- df %>% 
+  left_join(poppm, by = c("iso3","acat")) %>% 
   group_by(iso3) %>%
   summarise(wavg_ode = sum(ode*pop)/sum(pop),
             wavg_ltbi = sum(ltbi*pop)/sum(pop)) %>% 
   mutate(pdiff = round((1-(wavg_ode/wavg_ltbi)),4),
          adiff = round((wavg_ode-wavg_ltbi),4))
 
-gdfPOP_PM <- df %>% 
-  left_join(POP_PM, by = c("iso3","acat")) %>% 
+gdfpoppm <- df %>% 
+  left_join(poppm, by = c("iso3","acat")) %>% 
   mutate(odepop = ode*pop, ltbipop = ltbi*pop) %>% 
   group_by(iso3, acat) %>%
   summarise(odepop = sum(odepop), ltbipop = sum(ltbipop)) %>% 
   group_by(iso3) %>%
   summarise(odepop = sum(odepop), ltbipop = sum(ltbipop))
-
-gODE_POP_PM <- round(sum(gdfPOP_PM$odepop), 0)
-prevODE_POP_PM <- round((gODE_POP_PM/gPOP_PM)*1e2, 1)
-
-gLTBI_POP_PM <- round(sum(gdfPOP_PM$ltbipop), 0)
-prevLTBI_POP_PM <- round((gLTBI_POP_PM/gPOP_PM)*1e2, 1)
 
 # 5. Plots ==========
 # 5.1 Quick comparison (ODE v Analytical)
