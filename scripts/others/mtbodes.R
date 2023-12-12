@@ -72,14 +72,14 @@ deriv(I[2:Na,2:Nj]) <- -kappa[j] * I[i,j] + kappa[j-1] * I[i,j-1] - gammaI[i,j] 
 gammaI[,] <- gamma[j] * I[i,j] # Self-clearance of infection year
 Sfrac[] <- exp( -lambda_data[1,i] * (5*i-2.5) ) # Proportion susceptible
 ST <- sum(Sfrac) # Sum of all susceptibles
-maxage[] <- c(5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,90) # Max age per age group
-ratios[1:2] <- 1 # Infection year 1 and 2
-ratios[3] <- 2 # Infection years 3-9
-ratios[4] <- maxage[i] - 3 # Infection years 10+
+ratios[,1:2] <- 1 # Infection year 1 and 2
+ratios[,3] <- 2 # Infection years 3-9
+ratios[,4] <- 5*i - 3 # Infection years 10+
+rationorm[] <- sum(ratios[i,]) # Sum of ratios
 
 # 3.4 Initial states 
 initial(S[]) <- Sfrac[i]/ST # Susceptible
-initial(I[,]) <- (1-Sfrac[i]) * ratios[j]/sum(ratios) # Infected
+initial(I[,]) <- (1-Sfrac[i]) * ratios[i,j]/rationorm[i] # Infected
 
 # 3.5 Interpolation
 frac[] <- interpolate(time_data, frac_data, 'linear') # Population fraction
@@ -100,5 +100,5 @@ dim(gamma) <- Nj # Self-clearance per infection year (Nj)
 dim(gammaI) <- c(Na, Nj) # Self-clearance per age group (Na) and infection year (Nj)
 dim(kappa) <- Nj # Infection year transition per infection year
 dim(Sfrac) <- Na # Proportion susceptible per age group
-dim(ratios) <- Nj # Dimensions for the ratios
-dim(maxage) <- Na # Max age
+dim(ratios) <- c(Na, Nj) # Dimensions for the ratios
+dim(rationorm) <- Na # Max age
