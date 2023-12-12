@@ -188,7 +188,7 @@ sub_df <- df %>% # Subset dataframe
   mutate(abline = odin - 0.10) %>% # Slope with intercept -0.1
   mutate(outbound = ltbi < abline) %>% # Evaluate if it falls bellow intercept
   filter(outbound == TRUE) # Filter out of bound estimates
-export(sub_df, here("data", "random", "sub_df.Rdata"))
+sub_iso <- unique(sub_df$iso3)
 
 # 5.3 Quick comparison per country
 pdf(here("plots","LTBIdiscrep_iso3.pdf"), height = 6, width = 10)
