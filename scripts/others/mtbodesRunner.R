@@ -27,7 +27,7 @@ kappa_bc <- 1 # Infection year Jb - Jc
 kappa_cd <- 1 # Infection year Jc - Jd **NEEDS TO BE CHECKED**
 
 # 2.3 Times  
-times <- seq(from = 0, to = 116, by = 1)
+times <- seq(from = 0, to = 116, by = 0.1) 
 years <- times + 1934 # Start year: 1934
 
 # 2.4 ISOs
