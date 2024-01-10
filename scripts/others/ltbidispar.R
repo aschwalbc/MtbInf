@@ -13,7 +13,7 @@ ode <- import(here("data","mtb","mMtb_WHO_norev_nomix_pop_nosc.Rdata")) # ODE re
 odi <- import(here("data","mtb","odingmtb.Rdata")) # ODIN ODE
 pop <- import(here("data","sources","pop","WPP_Pop_1950-2100.csv")) # Current WPP
 poppm <- import(here("data","sources","pop","POP2014.Rdata")) # PMED WPP
-pmed <- import(here("data","sources","others","PMED.1002152.csv")) # PMED results
+pmed <- import(here("supp mat","Houben & Dodd - Supp Material.csv"), skip = 1) # PMED results
 
 # 2. Approaches ==========
 # 2.1 Analytical approach
@@ -173,6 +173,20 @@ ggplot() +
   scale_y_continuous(labels = scales::percent_format()) +
   coord_cartesian(xlim = c(0,1), ylim = c(0,1)) +
   labs(x = "Numerical approach (ODIN)", y = "Analytical approach (ARI)") +
+  theme_bw()
+dev.off()
+
+# 5.3 Quick comparison (ODE v ODIN ODE)
+tiff(here("plots", "LTBIdiscrep_ODEODIN.tiff"), height = 1000, width = 1400, res = 300)
+ggplot() +
+  geom_point(aes(x = df$ode, y = df$odin), size = 0.5) +
+  geom_abline(intercept = 0, slope = 1, color = "red") +
+  geom_abline(intercept = 0.10, slope = 1, color = "red", linetype = 'dashed') +
+  geom_abline(intercept = -0.10, slope = 1, color = "red", linetype = 'dashed') +
+  scale_x_continuous(labels = scales::percent_format()) +
+  scale_y_continuous(labels = scales::percent_format()) +
+  coord_cartesian(xlim = c(0,1), ylim = c(0,1)) +
+  labs(x = "Numerical approach (ODE)", y = "Numerical approach (ODIN)") +
   theme_bw()
 dev.off()
 
