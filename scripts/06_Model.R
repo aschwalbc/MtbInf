@@ -166,8 +166,8 @@ sis <- function(times, state, parms) {
   S8000  <- state["S8000"]; I8000a  <- state["I8000a"]; I8000b  <- state["I8000b"]; I8000c  <- state["I8000c"]; I8000d  <- state["I8000d"]
   
   # Extract parameters
-  gamma_a <- 0.0 # Self-clearance rate (A) [Horton et al. 2023]
-  gamma_b <- 0.0 # Self-clearance rate (B) [Horton et al. 2023]
+  gamma_a <- 1.13 # Self-clearance rate (A) [Horton et al. 2023]
+  gamma_b <- 1.13 # Self-clearance rate (B) [Horton et al. 2023]
   gamma_c <- 0.0 # Self-clearance rate (C)
   gamma_d <- 0.0 # Self-clearance rate (D)
   alpha <- 1/5 # Age transition
