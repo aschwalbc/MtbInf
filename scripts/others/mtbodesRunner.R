@@ -96,7 +96,7 @@ mtb <- merge(ari[iso3 == iso, .(t = year, pop, agegp)], mtb, by = c('t','agegp')
 yr <- 2014 # Set focus year
 mtbi <- mtb[t == yr & !is.na(J), .(prev = sum(val)), by = agegp] # Focus on infected
 mtbi <- merge(ari[iso3 == iso & year == yr, .(pop, agegp)], mtbi, by = c('agegp')) # Add population
-mtbi[, .(ltbi = 1e2 * weighted.mean(x = prev, w = pop))] #12.55984
+mtbi[, .(ltbi = 1e2 * weighted.mean(x = prev, w = pop))]
 
 # 7. Streamlined function ==========
 getLTBI <- function(iso, yr){
