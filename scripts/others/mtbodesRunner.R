@@ -10,6 +10,7 @@ library(tidyverse) # To use tidyverse
 library(ggplot2) # To build comparative plots
 library(data.table) # Faster than data.frame
 library(odin) # Solver for ordinary differential equations
+library(tictoc) # Track running time
 
 # 1. Load data ==========
 ari <- as.data.table(import(here("data", "ari", "mARI_WHO_norev_nomix_pop.Rdata")))
@@ -137,11 +138,13 @@ getLTBI <- function(iso, yr){
 getLTBI('IND', 2014)
 
 # Run through all ISO3
+tic()
 gmtb <- list()
 for (iso in ari[,unique(iso3)]) {
   print(iso)
   gmtb[[iso]] <- data.table(iso3 = iso, ltbi = getLTBI(iso, 2014))
 }
 gmtb <- rbindlist(gmtb)
+toc()
 
-export(gmtb, here("data", "mtb", "odingmtb.Rdata"))
+export(gmtb, here("data", "mtb", "odingmtb_s.Rdata"))
