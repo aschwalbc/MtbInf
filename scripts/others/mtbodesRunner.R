@@ -101,7 +101,7 @@ mtbi[, .(ltbi = 1e2 * weighted.mean(x = prev, w = pop))] #12.55984
 getLTBI <- function(iso, yr){
   
   # Parameter object
-  parms <- list(time_data = years, 
+  parms <- list(time_data = data_years, 
                 frac_data = as.matrix(dcast(data = ari[iso3 == iso & year %in% years, .(year, agegp, fpop)], year ~ agegp, value.var = 'fpop'))[,-1],
                 theta_data = ari[iso3 == iso & year %in% years & agegp == '00-04', birthrate],
                 lambda_data = as.matrix(dcast(data = ari[iso3 == iso & year %in% years, .(year, agegp, ari)], year ~ agegp, value.var = 'ari'))[,-1],
