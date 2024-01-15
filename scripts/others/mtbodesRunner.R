@@ -26,9 +26,11 @@ kappa_ab <- 1 # Infection year Ja - Jb
 kappa_bc <- 1 # Infection year Jb - Jc
 kappa_cd <- 1 # Infection year Jc - Jd **NEEDS TO BE CHECKED**
 
-# 2.3 Times  
-times <- seq(from = 0, to = 116, by = 0.1) 
+# 2.3 Times
+times <- seq(from = 0, to = 116, by = 0.1)
 years <- times + 1934 # Start year: 1934
+data_times <- seq(from = 0, to = 116, by = 1) 
+data_years <- data_times + 1934 # Start year: 1934
 
 # 2.4 ISOs
 iso <- unique(ari$iso3)
@@ -40,12 +42,14 @@ fn <- here("scripts", "others", "mtbodes.R")
 mod <- odin(fn)
 
 # 4.2 Parameter object
-parms <- list(time_data = years, 
-  frac_data = as.matrix(dcast(data = ari[iso3 == iso & year %in% years, .(year, agegp, fpop)], year ~ agegp, value.var = 'fpop'))[,-1],
-  theta_data = ari[iso3 == iso & year %in% years & agegp == '00-04', birthrate],
-  lambda_data = as.matrix(dcast(data = ari[iso3 == iso & year %in% years, .(year, agegp, ari)], year ~ agegp, value.var = 'ari'))[,-1],
-  gamma = c(gamma_a, gamma_b, gamma_c, gamma_d),
-  kappa = c(kappa_ab, kappa_bc, kappa_cd, 0))
+parms <- list(time_data = data_years, 
+              frac_data = as.matrix(dcast(data = ari[iso3 == iso & year %in% years, .(year, agegp, fpop)],
+                                          year ~ agegp, value.var = 'fpop'))[,-1],
+              theta_data = ari[iso3 == iso & year %in% years & agegp == '00-04', birthrate],
+              lambda_data = as.matrix(dcast(data = ari[iso3 == iso & year %in% years, .(year, agegp, ari)],
+                                            year ~ agegp, value.var = 'ari'))[,-1],
+              gamma = c(gamma_a, gamma_b, gamma_c, gamma_d),
+              kappa = c(kappa_ab, kappa_bc, kappa_cd, 0))
 
 # 4.3 Generate model
 md <- mod$new(user = parms)
@@ -91,7 +95,7 @@ mtb <- merge(ari[iso3 == iso, .(t = year, pop, agegp)], mtb, by = c('t','agegp')
 yr <- 2014 # Set focus year
 mtbi <- mtb[t == yr & !is.na(J), .(prev = sum(val)), by = agegp] # Focus on infected
 mtbi <- merge(ari[iso3 == iso & year == yr, .(pop, agegp)], mtbi, by = c('agegp')) # Add population
-mtbi[, .(ltbi = 1e2 * weighted.mean(x = prev, w = pop))]
+mtbi[, .(ltbi = 1e2 * weighted.mean(x = prev, w = pop))] #12.55984
 
 # 7. Streamlined function ==========
 getLTBI <- function(iso, yr){
