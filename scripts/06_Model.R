@@ -13,8 +13,10 @@ library(data.table) # Faster than data.frame
 
 # 1. Load data ==========
 ARI <- import(here("data","ari","mARI_IHME_rev_mix_pop.Rdata")) # IHME - Reversion - Mixing
-ARI <- import(here("data","ari","mARI_IHME_norev_nomix_pop.Rdata")) # IHME - No reversion - No mixing
-ARI <- import(here("data","ari","mARI_WHO_norev_nomix_pop.Rdata")) # WHO - No reversion - No mixing
+# ARI <- import(here("data","ari","mARI_IHME_norev_mix_pop.Rdata")) # IHME - No reversion - Mixing
+# ARI <- import(here("data","ari","mARI_IHME_rev_nomix_pop.Rdata")) # IHME - Reversion - No mixing
+# ARI <- import(here("data","ari","mARI_IHME_norev_nomix_pop.Rdata")) # IHME - No reversion - No mixing
+# ARI <- import(here("data","ari","mARI_WHO_norev_nomix_pop.Rdata")) # WHO - No reversion - No mixing
 
 # 2. Data curation ==========
 # Extract age group-specific parameters
@@ -164,8 +166,8 @@ sis <- function(times, state, parms) {
   S8000  <- state["S8000"]; I8000a  <- state["I8000a"]; I8000b  <- state["I8000b"]; I8000c  <- state["I8000c"]; I8000d  <- state["I8000d"]
   
   # Extract parameters
-  gamma_a <- 0.0 # Self-clearance rate (A) [Horton et al. 2023]
-  gamma_b <- 0.0 # Self-clearance rate (B) [Horton et al. 2023]
+  gamma_a <- 1.13 # Self-clearance rate (A) [Horton et al. 2023]
+  gamma_b <- 1.13 # Self-clearance rate (B) [Horton et al. 2023]
   gamma_c <- 0.0 # Self-clearance rate (C)
   gamma_d <- 0.0 # Self-clearance rate (D)
   alpha <- 1/5 # Age transition
@@ -408,8 +410,9 @@ mtb <- do.call("rbind",list_df)
 toc()
 
 # Median run - MtbInf
-# export(mtb,here("data","mtb","mMtb_IHME_rev_mix_pop_sc.Rdata")) # IHME - Reversion - Mix - Self-clearance
+export(mtb,here("data","mtb","mMtb_IHME_rev_mix_pop_sc.Rdata")) # IHME - Reversion - Mix - Self-clearance
 # export(mtb,here("data","mtb","mMtb_IHME_rev_mix_pop_nosc.Rdata")) # IHME - Reversion - Mix - No self-clearance
+# export(mtb,here("data","mtb","mMtb_IHME_rev_nomix_pop_nosc.Rdata")) # IHME - Reversion - No mix - No self-clearance
 # export(mtb,here("data","mtb","mMtb_IHME_norev_mix_pop_nosc.Rdata")) # IHME - No reversion - Mix - No self-clearance
 # export(mtb,here("data","mtb","mMtb_IHME_norev_nomix_pop_nosc.Rdata")) # IHME - No reversion - No mix - No self-clearance
-export(mtb,here("data","mtb","mMtb_WHO_norev_nomix_pop_nosc.Rdata")) # WHO - No reversion - No mix - No self-clearance
+# export(mtb,here("data","mtb","mMtb_WHO_norev_nomix_pop_nosc.Rdata")) # WHO - No reversion - No mix - No self-clearance

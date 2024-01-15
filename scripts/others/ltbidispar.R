@@ -6,6 +6,7 @@
 library(rio) # Facilitates importing and exporting
 library(here) # Building file paths
 library(tidyverse) # To use tidyverse
+options(scipen = 999) # Remove scientific notation
 
 # 1. Load data ==========
 ari <- import(here("data","ari","mARI_WHO_norev_nomix_pop.Rdata")) # ARI history
@@ -61,10 +62,10 @@ odi <- odi %>% # ODIN ODE results
 # Merge approaches
 df <- merge(ari, ode, by = c("iso3","acat"), all = TRUE) %>% # Merge with ODE results
   merge(odi, by = c("iso3","acat"), all = TRUE) %>% # Merge with ODIN ODE results
-  mutate(difltode = ode - ltbi, difltodi = odin - ltbi, difodeodi = ode - odin) %>% # Calculate differences
-  mutate(difltode = format(round(difltode, 5), scientific = FALSE), # Remove scientific notation and round
-         difltodi = format(round(difltodi, 5), scientific = FALSE), # Remove scientific notation and round
-         difodeodi = format(round(difodeodi, 5), scientific = FALSE)) # Remove scientific notation and round
+  mutate(difltode = ode - ltbi, difltodi = odin - ltbi, difodeodi = ode - odin,
+         pdifltode = 1 - (ode/ltbi), pdifltodi = 1 - (odin/ltbi), pdifodeodi = 1 - (ode/odin)) %>% # Calculate differences
+  mutate(difltode = round(difltode, 5), difltodi = round(difltodi, 5), difodeodi = round(difodeodi, 5),
+         pdifltode = round(pdifltode, 5), pdifltodi = round(pdifltodi, 5), pdifodeodi = round(pdifodeodi, 5)) # Remove scientific notation and round
 rm(ari, ode, odi)
 
 # 3. PMED Results
@@ -76,7 +77,7 @@ pmed <- pmed %>%
   mutate(val = trimws(val), lo = trimws(lo), hi = trimws(hi)) %>% 
   mutate(val = str_remove_all(val, ","), lo = str_remove_all(lo, ","), hi = str_remove_all(hi, ",")) %>% 
   mutate(hi = str_remove_all(hi, "]")) %>% 
-  mutate(val = as.numeric(val), lo = as.numeric(lo), hi = as.numeric(hi))
+  mutate(val = as.integer(val), lo = as.integer(lo), hi = as.integer(hi))
 
 # 4. Population ==========
 iso <- unique(df$iso3)
@@ -103,17 +104,16 @@ dfpop <- df %>%
   left_join(pop, by = c("iso3","acat")) %>% 
   group_by(iso3) %>%
   summarise(wavg_ode = sum(ode*pop)/sum(pop),
+            wavg_odin = sum(odin*pop)/sum(pop),
             wavg_ltbi = sum(ltbi*pop)/sum(pop)) %>% 
-  mutate(pdiff = round((1-(wavg_ode/wavg_ltbi)),4),
-         adiff = round((wavg_ode-wavg_ltbi),4))
-
-gdfpop <- df %>% 
-  left_join(pop, by = c("iso3","acat")) %>% 
-  mutate(odepop = ode*pop, ltbipop = ltbi*pop) %>% 
-  group_by(iso3, acat) %>%
-  summarise(odepop = sum(odepop), ltbipop = sum(ltbipop)) %>% 
-  group_by(iso3) %>%
-  summarise(odepop = sum(odepop), ltbipop = sum(ltbipop))
+  mutate(pdiffode = round((1-(wavg_ode/wavg_ltbi)),4),
+         pdiffodin = round((1-(wavg_odin/wavg_ltbi)),4),
+         adiffode = round((wavg_ode-wavg_ltbi),4),
+         adiffodin = round((wavg_odin-wavg_ltbi),4))
+summary(dfpop$pdiffode)
+summary(dfpop$adiffode)
+summary(dfpop$pdiffodin)
+summary(dfpop$adiffodin)
 
 # 4.2 PMED WPP (POP) - Weight by population
 # Weight by population (PMED WPP)
@@ -129,23 +129,16 @@ poppm <- poppm %>%
                           acat == '60-64' ~ '[60,65)', acat == '65-69' ~ '[65,70)', acat == '70-74' ~ '[70,75)',
                           acat == '75-79' ~ '[75,80)', acat == '80-' ~ '[80,90]'))
 
-gpoppm <- sum(poppm$pop) # 7224311000
-
 dfpoppm <- df %>% 
   left_join(poppm, by = c("iso3","acat")) %>% 
   group_by(iso3) %>%
   summarise(wavg_ode = sum(ode*pop)/sum(pop),
+            wavg_odin = sum(odin*pop)/sum(pop),
             wavg_ltbi = sum(ltbi*pop)/sum(pop)) %>% 
-  mutate(pdiff = round((1-(wavg_ode/wavg_ltbi)),4),
-         adiff = round((wavg_ode-wavg_ltbi),4))
-
-gdfpoppm <- df %>% 
-  left_join(poppm, by = c("iso3","acat")) %>% 
-  mutate(odepop = ode*pop, ltbipop = ltbi*pop) %>% 
-  group_by(iso3, acat) %>%
-  summarise(odepop = sum(odepop), ltbipop = sum(ltbipop)) %>% 
-  group_by(iso3) %>%
-  summarise(odepop = sum(odepop), ltbipop = sum(ltbipop))
+  mutate(pdiffode = round((1-(wavg_ode/wavg_ltbi)),4),
+         pdiffodin = round((1-(wavg_odin/wavg_ltbi)),4),
+         adiffode = round((wavg_ode-wavg_ltbi),4),
+         adiffodin = round((wavg_odin-wavg_ltbi),4))
 
 # 5. Plots ==========
 # 5.1 Quick comparison (ODE v Analytical)
@@ -191,26 +184,63 @@ ggplot() +
 dev.off()
 
 sub_df <- df %>% # Subset dataframe
-  mutate(abline = odin - 0.10) %>% # Slope with intercept -0.1
-  mutate(outbound = ltbi < abline) %>% # Evaluate if it falls bellow intercept
-  filter(outbound == TRUE) # Filter out of bound estimates
-sub_iso <- unique(sub_df$iso3)
+  mutate(ablineodeabv = ode + 0.10, ablineodeund = ode - 0.10, ablineodinabv = odin + 0.10) %>% # Slope with intercept -0.1
+  mutate(outboundodeabv = as.integer(ltbi > ablineodeabv), outboundodinabv = as.integer(ltbi > ablineodinabv)) %>% # Evaluate if it is above intercept
+  mutate(outboundodeund = as.integer(odin < ablineodeund))
 
-# 5.3 Quick comparison per country
+sum(as.numeric(sub_df$outboundodeabv)) # Out of bounds
+unique(sub_df$iso3[sub_df$outboundodeabv == TRUE])
+sum(as.numeric(sub_df$outboundodinabv)) # Out of bounds
+unique(sub_df$iso3[sub_df$outboundodinabv == TRUE])
+sum(as.numeric(sub_df$outboundodeund)) # Out of bounds
+unique(sub_df$iso3[sub_df$outboundodeund == TRUE])
+
+# 5.4 Quick comparison per country
 pdf(here("plots","LTBIdiscrep_iso3.pdf"), height = 6, width = 10)
 for (i in iso) {
-  subset <- subset(df, iso3 == i)
-  p <- ggplot(subset) +
-    geom_point(aes(x = ode, y = ltbi), size = 1) +
+  subset <- df %>% 
+    filter(iso3 == i) %>% 
+    select(iso3, acat, ltbi, ode, odin) %>%
+    pivot_longer(cols = c(ode, odin), names_to = "var", values_to = "val")
+  
+  p <- ggplot(subset, aes(x = val, y = ltbi)) +
+    facet_wrap(~var,) +
+    geom_point(size = 1) +
     geom_abline(intercept = 0, slope = 1, color = "red") +
+    geom_abline(intercept = 0.10, slope = 1, color = "red", linetype = 'dashed') +
+    geom_abline(intercept = -0.10, slope = 1, color = "red", linetype = 'dashed') +
     scale_x_continuous(labels = scales::percent_format()) +
     scale_y_continuous(labels = scales::percent_format()) +
-    coord_cartesian(xlim = c(0,1), ylim = c(0,1)) +
-    labs(x = "Numerical approach (ODE)", y = "Analytical approach (Cumulative ARI)") +
+    coord_cartesian(xlim = c(0, 1), ylim = c(0, 1)) +
+    labs(x = "Numerical approach", y = "Analytical approach (Cumulative ARI)") +
     ggtitle(paste("ISO3: ", i)) +
     theme_bw()
+  
   print(p)
 }
+
+dev.off()
+rm(i,p,subset)
+
+pdf(here("plots","LTBIdiscrep_iso3_bar.pdf"), height = 10, width = 22)
+for (i in iso) {
+  subset <- df %>% 
+    filter(iso3 == i) %>% 
+    select(iso3, acat, ltbi, ode, odin) %>%
+    pivot_longer(cols = c(ltbi, ode, odin), names_to = "var", values_to = "val") %>% 
+    mutate(var = factor(var, levels = c("ltbi", "ode", "odin")))
+  
+  p <- ggplot(subset, aes(x = acat, y = val, fill = var)) +
+    facet_wrap(~var,) +
+    geom_col(position = position_dodge(width = 0.8)) +
+    scale_y_continuous(labels = scales::percent_format()) +
+    labs(x = "Numerical approach", y = "Analytical approach (Cumulative ARI)") +
+    ggtitle(paste("ISO3: ", i)) +
+    theme_bw()
+  
+  print(p)
+}
+
 dev.off()
 rm(i,p,subset)
 
@@ -221,17 +251,54 @@ top30 <- c("IND","CHN","IDN","ZAF","PAK","PHL","NGA","BGD","COD","MMR",
 
 pdf(here("plots","LTBIdiscrep_top30.pdf"), height = 6, width = 10)
 for (i in top30) {
-  subset <- subset(df, iso3 == i)
-  p <- ggplot(subset) +
-    geom_point(aes(x = ode, y = ltbi), size = 1) +
+  subset <- df %>% 
+    filter(iso3 == i) %>% 
+    select(iso3, acat, ltbi, ode, odin) %>%
+    pivot_longer(cols = c(ode, odin), names_to = "var", values_to = "val")
+  
+  p <- ggplot(subset, aes(x = val, y = ltbi)) +
+    facet_wrap(~var,) +
+    geom_point(size = 1) +
     geom_abline(intercept = 0, slope = 1, color = "red") +
+    geom_abline(intercept = 0.10, slope = 1, color = "red", linetype = 'dashed') +
+    geom_abline(intercept = -0.10, slope = 1, color = "red", linetype = 'dashed') +
     scale_x_continuous(labels = scales::percent_format()) +
     scale_y_continuous(labels = scales::percent_format()) +
-    coord_cartesian(xlim = c(0,1), ylim = c(0,1)) +
-    labs(x = "Numerical approach (ODE)", y = "Analytical approach (Cumulative ARI)") +
+    coord_cartesian(xlim = c(0, 1), ylim = c(0, 1)) +
+    labs(x = "Numerical approach", y = "Analytical approach (Cumulative ARI)") +
     ggtitle(paste("ISO3: ", i)) +
     theme_bw()
+  
   print(p)
 }
+
 dev.off()
 rm(i,p,subset)
+
+pdf(here("plots","LTBIdiscrep_top30_bar.pdf"), height = 10, width = 22)
+for (i in top30) {
+  subset <- df %>% 
+    filter(iso3 == i) %>% 
+    select(iso3, acat, ltbi, ode, odin) %>%
+    pivot_longer(cols = c(ltbi, ode, odin), names_to = "var", values_to = "val") %>% 
+    mutate(var = factor(var, levels = c("ltbi", "ode", "odin")))
+  
+  p <- ggplot(subset, aes(x = acat, y = val, fill = var)) +
+    facet_wrap(~var,) +
+    geom_col(position = position_dodge(width = 0.8)) +
+    scale_y_continuous(labels = scales::percent_format()) +
+    labs(x = "Numerical approach", y = "Analytical approach (Cumulative ARI)") +
+    ggtitle(paste("ISO3: ", i)) +
+    theme_bw()
+  
+  print(p)
+}
+
+dev.off()
+rm(i,p,subset)
+
+# 5.5 Disparity in numbers
+dispdf <- df %>% 
+  group_by(acat) %>% 
+  summarise(difltode = round(mean(difltode)*1e2,2), difltodi = round(mean(difltodi)*1e2,2), difodeodi = round(mean(difodeodi)*1e2,2),
+            pdifltode = round(mean(pdifltode)*1e2,2), pdifltodi = round(mean(pdifltodi)*1e2,2), pdifodeodi = round(mean(pdifodeodi)*1e2,2))
