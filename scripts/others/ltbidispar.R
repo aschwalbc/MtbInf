@@ -12,6 +12,7 @@ options(scipen = 999) # Remove scientific notation
 ari <- import(here("data","ari","mARI_WHO_norev_nomix_pop.Rdata")) # ARI history
 ode <- import(here("data","mtb","mMtb_WHO_norev_nomix_pop_nosc.Rdata")) # ODE results
 odi <- import(here("data","mtb","odingmtb.Rdata")) # ODIN ODE
+# odi <- import(here("data","mtb","odingmtb_s.Rdata")) # ODIN ODE (Smaller time steps)
 pop <- import(here("data","sources","pop","WPP_Pop_1950-2100.csv")) # Current WPP
 poppm <- import(here("data","sources","pop","POP2014.Rdata")) # PMED WPP
 pmed <- import(here("supp mat","Houben & Dodd - Supp Material.csv"), skip = 1) # PMED results
