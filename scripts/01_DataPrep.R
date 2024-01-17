@@ -460,7 +460,6 @@ GTB <- merge(IHME,KID,by=c('iso3','year'),all = TRUE) # Merge data sets
 rm(IHME,KID) # Clean objects
 
 # Missing fraction smear-positivity (mFr)
-miss <- GTB[,all(is.na(mFr)),by=iso3] # Countries with at least one missing mFr = FALSE
 
 # Missing from merge
 for(tmp in miss[V1==FALSE,as.character(iso3)]){ 
@@ -474,6 +473,8 @@ for(tmp in miss[V1==FALSE,as.character(iso3)]){
 rm(tmp,vlu) # Clean objects
 
 # Countries with no mFr data
+miss <- GTB[,all(is.na(mFr)),by=iso3] # Countries with at least one missing mFr = FALSE
+
 mmFr <- GTB[,median(mFr,na.rm=TRUE)] # Calculate overall median mFr
 mvFr <- GTB[,median(vFr,na.rm=TRUE)] # Calculate overall median vFr
 
