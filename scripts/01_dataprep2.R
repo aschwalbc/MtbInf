@@ -39,7 +39,7 @@ WHOo <- as.data.table(import(here("data","sources","who","WHOest_1990-2014.csv")
 WHO <- WHOo %>% 
   filter(year < 2000) %>% 
   rbind(WHOn, fill = TRUE) %>% 
-  select(iso3, year, 
+  select(iso3, year,
          inc = e_inc_num, inc_lo = e_inc_num_lo, inc_hi = e_inc_num_hi, 
          cdr = c_cdr, cdr_lo = c_cdr_lo, cdr_hi = c_cdr_hi, 
          tbhiv = e_tbhiv_prct, tbhiv_lo = e_tbhiv_prct_lo, tbhiv_hi = e_tbhiv_prct_hi) %>% 
@@ -182,11 +182,47 @@ ARI <- GTB %>%
   mutate(E = sqrt(sd^2 + vstb / stb^2 + vS + vFr / mFr^2) * revE) %>% 
   select(iso3, year, ari, E, lari) %>% 
   mutate(type = 'Prevalence estimate')
-rm(stb, vstb, rev, revE)
+rm(stb, vstb)
 
-p <- ggplot(GTB) +
-  facet_wrap(~iso3) +
-  geom_line(aes(x = year, y = S), colour = 'salmon') +
-  geom_vline(xintercept = 2000, linetype = 'dashed', colour = 'black')
-ggsave("WHO_plot.pdf", plot = p, width = 80, height = 60, units = "cm")
+# 2. Direct ARI estimates ==========
+# 2.1 Cauthen et al.
+CAU <- as.data.table(import(here("data","sources","surveys","ARI_Cauthen.csv")))
 
+CAU <- CAU %>% 
+  rename_with(tolower) %>% 
+  mutate(ari = ari * 1e-2,
+         age = {start <- regexpr('\\(', age); stop <- regexpr('\\)', age)
+         as.numeric(substr(as.character(age), start = start + 1, stop = stop - 1))}) %>% 
+  mutate(var = ari / (age * n)) %>% 
+  mutate(E = sqrt(var) / ari) %>% 
+  mutate(ari = ari * rev, E = E * revE) %>% 
+  mutate(lari = log(ari)) %>% 
+  mutate(type = 'Mtb survey') %>% 
+  select(iso3, year, ari, E, lari, type) %>% 
+  na.omit() %>%
+  mutate(iso3 = factor(iso3)) %>% 
+  arrange(iso3, year) %>% 
+  as.data.table()
+
+# 2.2 Review of Mtb surveys
+REV <- as.data.table(import(here("data","sources","surveys","ARI_SystRev.csv")))
+
+REV <- REV %>% 
+  rename_with(tolower) %>% 
+  mutate(ari = ari * 1e-2,
+         age = {start <- regexpr('\\(', age); stop <- regexpr('\\)', age)
+         as.numeric(substr(as.character(age), start = start + 1, stop = stop - 1))}) %>%
+  mutate(var = ari / (age * n)) %>% 
+  mutate(var = if_else(!is.na(ari_hi), (1.96e-2 * (ari_hi - ari_lo))^2, ari / (age * n))) %>% 
+  mutate(E = sqrt(var) / ari) %>% 
+  mutate(ari = ari * rev, E = E * revE) %>% 
+  mutate(lari = log(ari)) %>% 
+  mutate(type = 'Mtb survey') %>% 
+  select(iso3, year, ari, E, lari, type) %>% 
+  na.omit() %>%
+  mutate(iso3 = factor(iso3)) %>% 
+  arrange(iso3, year) %>% 
+  as.data.table()
+
+
+  
