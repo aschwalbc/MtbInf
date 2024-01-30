@@ -1,4 +1,4 @@
-﻿iso3,year,age,type,prev,prev_lo,prev_hi
+﻿iso3,year,agegp,type,prev,lo,hi
 CHN,1990,>15,sm,170,166,174
 CHN,1990,>15,bac,221,216,226
 KOR,1990,>5,sm,140,,
