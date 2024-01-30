@@ -78,3 +78,80 @@ pIHMEinc <- ggplot(rbind(WHOinc, IHME)) +
   theme_bw() +
   theme(legend.position = 'bottom')
 ggsave(here("plots", "dataexp", "IHME_inc.png"), plot = pIHMEinc, width = 20, height = 15, units = "cm")
+
+# 3. TB prevalence surveys ==========
+IHME <- as.data.table(import(here("data","sources","ihme","IHME-GBD.csv")))
+IHMEkey <- as.data.table(import(here("data","sources","ihme","IHMEkey.csv"))) 
+survey <- as.data.table(import(here("data","sources","surveys","tbprev_surv.csv")))
+WPP <- import(here("data","sources","pop","WPP_Pop_1950-2100.csv"))
+
+IHME <- IHME %>%
+  left_join(IHMEkey, by = c('location_id', 'location_name')) %>%
+  select(iso3, year, age = age_name, cause_id, prev = val, lo = lower, hi = upper) %>%
+  group_by(iso3, year, age) %>%
+  summarise(prev = sum(prev), lo = sum(lo), hi = sum(hi), .groups = 'drop') %>% 
+  group_by(iso3, year) %>% 
+  summarise(prev5 = sum(prev, na.rm = TRUE),
+            prev10 = sum(if_else(age %in% c('10-14 years', '15-19 years', '20-54 years', '+55 years'), prev, 0), na.rm = TRUE),
+            prev15 = sum(if_else(age %in% c('15-19 years', '20-54 years', '+55 years'), prev, 0), na.rm = TRUE),
+            lo5 = sum(lo, na.rm = TRUE),
+            lo10 = sum(if_else(age %in% c('10-14 years', '15-19 years', '20-54 years', '+55 years'), lo, 0), na.rm = TRUE),
+            lo15 = sum(if_else(age %in% c('15-19 years', '20-54 years', '+55 years'), lo, 0), na.rm = TRUE),
+            hi5 = sum(hi, na.rm = TRUE),
+            hi10 = sum(if_else(age %in% c('10-14 years', '15-19 years', '20-54 years', '+55 years'), hi, 0), na.rm = TRUE),
+            hi15 = sum(if_else(age %in% c('15-19 years', '20-54 years', '+55 years'), hi, 0), na.rm = TRUE), .groups = 'drop') %>% 
+  pivot_longer(cols = -c(iso3, year), names_to = c(".value", "agegp"), 
+               names_pattern = "(prev|lo|hi)(\\d+)", values_to = c("prev", "lo", "hi")) %>%
+  mutate(agegp = case_when(agegp == "5" ~ ">5", agegp == "10" ~ ">10", agegp == "15" ~ ">15"))
+rm(IHMEkey)
+
+WPP <- WPP %>% 
+  select(iso3 = ISO3_code, year = Time, age = AgeGrp, pop = PopTotal) %>%
+  mutate(iso3 = na_if(iso3, "")) %>%
+  filter(!is.na(iso3) & year %in% 1990:2019) %>%
+  group_by(iso3, year) %>%
+  summarise(pop5 = sum(if_else(age != '0-4', pop, 0), na.rm = TRUE),
+    pop10 = sum(if_else(age %in% c('10-14', '15-19', '20-24', '25-29', '30-34', '35-39', '40-44', 
+                                   '45-49', '50-54', '55-59', '60-64', '65-69', '70-74', '75-79',
+                                   '80-84', '85-89', '90-94', '95-99', '100+'), pop, 0), na.rm = TRUE),
+    pop15 = sum(if_else(age %in% c('15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49',
+                                   '50-54', '55-59', '60-64', '65-69', '70-74', '75-79', '80-84',
+                                   '85-89', '90-94', '95-99', '100+'), pop, 0), na.rm = TRUE)) %>% 
+  pivot_longer(cols = starts_with("pop"), names_to = "agegp", values_to = "pop", names_prefix = "pop",
+               names_transform = list(agegp = ~ case_when(.x == "5" ~ ">5", .x == "10" ~ ">10", .x == "15" ~ ">15"))) %>% 
+  mutate(pop = pop * 1e3)
+
+IHME <- IHME %>% 
+  left_join(WPP, by = c('iso3', 'year', 'agegp')) %>% 
+  mutate(prev = prev / pop * 1e5, lo = lo / pop * 1e5, hi = hi / pop * 1e5) %>% 
+  mutate(type = 'ihme') %>% 
+  within(rm(pop)) %>% 
+  rbind(survey) %>% 
+  select(iso3, year, agegp, type, prev, lo, hi) %>% 
+  mutate(iso3 = as.factor(iso3)) %>% 
+  arrange(iso3, year, agegp)
+rm(WPP, survey)
+
+iso <- unique(IHME$iso3)
+age <- unique(IHME$agegp)
+
+pdf(here("plots", "dataexp", "IHMETBsurv_prev.pdf"), height = 6, width = 10)
+for(i in iso) {
+  for(a in age) {
+    db <- filter(IHME, iso3 == i, agegp == a)
+    if(any(db$type != 'ihme' & !is.na(db$prev))){
+      p<- ggplot() +
+        geom_line(filter(db, type == 'ihme'), mapping = aes(x = year, y = prev), colour = '#FA8072') +
+        geom_ribbon(filter(db, type == 'ihme'), mapping = aes(x = year, ymin = lo, ymax = hi), fill = '#FA8072', alpha = 0.2) +
+        geom_point(filter(db, type != 'ihme'), mapping = aes(x = year, y = prev, shape = type), colour = '#A05249') +
+        geom_errorbar(filter(db, type != 'ihme'), mapping = aes(x = year, ymin = lo, ymax = hi), colour = '#A05249', width = 0.8) +
+        scale_shape_manual(values = c(16, 17), labels = c("Bact+", "Smear+")) +
+        labs(x = 'Year', y = 'TB prevalence rate per 100k', title = 'IHME vs TB prevalence surveys',
+             subtitle = paste(i, a, sep = ' - '), shape = 'Type') +
+        theme_bw() +
+        theme(legend.position = 'bottom')
+      print(p)
+    }
+  }
+}
+dev.off()
