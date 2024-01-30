@@ -189,7 +189,6 @@ rm(stb, vstb)
 CAU <- as.data.table(import(here("data","sources","surveys","ARI_Cauthen.csv")))
 
 CAU <- CAU %>% 
-  rename_with(tolower) %>% 
   mutate(ari = ari * 1e-2,
          age = {start <- regexpr('\\(', age); stop <- regexpr('\\)', age)
          as.numeric(substr(as.character(age), start = start + 1, stop = stop - 1))}) %>% 
@@ -205,15 +204,12 @@ CAU <- CAU %>%
   as.data.table()
 
 # 2.2 Review of Mtb surveys
-REV <- as.data.table(import(here("data","sources","surveys","ARI_SystRev.csv")))
+REV <- as.data.table(import(here("data","sources","surveys","ari_sysrev.csv")))
 
 REV <- REV %>% 
-  rename_with(tolower) %>% 
-  mutate(ari = ari * 1e-2,
-         age = {start <- regexpr('\\(', age); stop <- regexpr('\\)', age)
-         as.numeric(substr(as.character(age), start = start + 1, stop = stop - 1))}) %>%
-  mutate(var = ari / (age * n)) %>% 
-  mutate(var = if_else(!is.na(ari_hi), (1.96e-2 * (ari_hi - ari_lo))^2, ari / (age * n))) %>% 
+  mutate(ari = ari * 1e-2) %>%
+  mutate(var = ari / (mage * n)) %>% 
+  mutate(var = if_else(!is.na(ari_hi), (1.96e-2 * (ari_hi - ari_lo))^2, ari / (mage * n))) %>% 
   mutate(E = sqrt(var) / ari) %>% 
   mutate(ari = ari * rev, E = E * revE) %>% 
   mutate(lari = log(ari)) %>% 
@@ -223,6 +219,3 @@ REV <- REV %>%
   mutate(iso3 = factor(iso3)) %>% 
   arrange(iso3, year) %>% 
   as.data.table()
-
-
-  
