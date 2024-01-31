@@ -50,7 +50,12 @@ pWHOinc <- ggplot(WHOinc) +
   theme(legend.position = 'bottom')
 ggsave(here("plots", "dataexp", "WHO_inc.png"), plot = pWHOinc, width = 20, height = 15, units = "cm")
 
-# 2. IHME estimates ==========
+# 2. WHO prevalence/incidence ratios ==========
+WHO <- as.data.table(import(here("data","sources","who","WHOest_1990-2014.csv")))
+
+
+
+# 3. IHME estimates ==========
 years <- 1990:2019
 IHME <- list()
 
@@ -79,7 +84,7 @@ pIHMEinc <- ggplot(rbind(WHOinc, IHME)) +
   theme(legend.position = 'bottom')
 ggsave(here("plots", "dataexp", "IHME_inc.png"), plot = pIHMEinc, width = 20, height = 15, units = "cm")
 
-# 3. TB prevalence surveys ==========
+# 4. TB prevalence surveys ==========
 IHME <- as.data.table(import(here("data","sources","ihme","IHME-GBD.csv")))
 IHMEkey <- as.data.table(import(here("data","sources","ihme","IHMEkey.csv"))) 
 survey <- as.data.table(import(here("data","sources","surveys","tbprev_surv.csv")))
