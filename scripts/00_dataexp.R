@@ -51,9 +51,100 @@ pWHOinc <- ggplot(WHOinc) +
 ggsave(here("plots", "dataexp", "WHO_inc.png"), plot = pWHOinc, width = 20, height = 15, units = "cm")
 
 # 2. WHO prevalence/incidence ratios ==========
-WHO <- as.data.table(import(here("data","sources","who","WHOest_1990-2014.csv")))
+WHO2013 <- as.data.table(import(here("data","sources","who","ratios","TB_burden_countries_2013.csv")))
+WHO2016 <- as.data.table(import(here("data","sources","who","ratios","TB_burden_countries_2016.csv")))
+survey <- as.data.table(import(here("data","sources","surveys","tbprev_surv.csv")))
 
+WHO2013 <- WHO2013 %>% 
+  select(iso3, year, g_whoregion, starts_with('e_prev_num'), starts_with('e_inc_num')) %>% 
+  filter(!e_prev_num < 10 | !e_inc_num < 10) %>% 
+  mutate(previnc = e_prev_num / e_inc_num, previnc_lo = e_prev_num_lo / e_inc_num_lo, previnc_hi = e_prev_num_hi / e_inc_num_hi) %>% 
+  mutate(type = '2013 DB') %>% 
+  select(iso3, year, g_whoregion, type, previnc, previnc_lo, previnc_hi)
 
+WHO2016 <- WHO2016 %>% 
+  select(iso3, year, g_whoregion, starts_with('e_prev_num'), starts_with('e_inc_num')) %>% 
+  filter(!e_prev_num < 10 | !e_inc_num < 10) %>% 
+  mutate(previnc = e_prev_num / e_inc_num, previnc_lo = e_prev_num_lo / e_inc_num_lo, previnc_hi = e_prev_num_hi / e_inc_num_hi) %>% 
+  mutate(type = '2016 DB') %>% 
+  select(iso3, year, g_whoregion, type, previnc, previnc_lo, previnc_hi)
+
+WHOratios <- WHO2013 %>% 
+  rbind(WHO2016) %>% 
+  group_by(iso3) %>%
+  filter(!n() < 10) %>%
+  ungroup()
+rm(WHO2013, WHO2016)
+
+iso <- unique(WHOratios$iso3)
+surv <- unique(survey$iso3)
+
+pdf(here("plots", "dataexp", "WHOratios.pdf"), height = 6, width = 10)
+for(i in iso) {
+  db <- filter(WHOratios, iso3 == i)
+  p <- ggplot(db) +
+    facet_wrap(~iso3) +
+    geom_line(aes(x = year, y = previnc, colour = type)) +
+    geom_ribbon(aes(x = year, ymin = previnc_lo, ymax = previnc_hi, fill = type), alpha = 0.2) +
+    scale_color_manual(values = c("#72A8FA", "#FA8072"), labels = c("2013 DB", "2016 DB")) +
+    scale_fill_manual(values = c("#72A8FA", "#FA8072"), labels = c("2013 DB", "2016 DB")) +
+    scale_y_continuous(breaks = seq(0, 6, 0.5), limits = c(0, 6.5)) +
+    labs(x = 'Year', y = 'Prevalence/incidence ratio', colour = 'Source', fill = 'Source') +
+    theme_bw() +
+    theme(legend.position = 'bottom')
+  print(p)
+}
+dev.off()
+
+pdf(here("plots", "dataexp", "WHOratios_surv.pdf"), height = 6, width = 10)
+for(i in surv) {
+  db <- filter(WHOratios, iso3 == i)
+  p <- ggplot(db) +
+    facet_wrap(~iso3) +
+    geom_line(aes(x = year, y = previnc, colour = type)) +
+    geom_ribbon(aes(x = year, ymin = previnc_lo, ymax = previnc_hi, fill = type), alpha = 0.2) +
+    scale_color_manual(values = c("#72A8FA", "#FA8072"), labels = c("2013 DB", "2016 DB")) +
+    scale_fill_manual(values = c("#72A8FA", "#FA8072"), labels = c("2013 DB", "2016 DB")) +
+    scale_y_continuous(breaks = seq(0, 6, 0.5), limits = c(0, 6.5)) +
+    labs(x = 'Year', y = 'Prevalence/incidence ratio', colour = 'Source', fill = 'Source') +
+    theme_bw() +
+    theme(legend.position = 'bottom')
+  print(p)
+}
+dev.off()
+
+gWHOratios <- WHOratios %>% 
+  group_by(type, year) %>% 
+  summarise(previnc = mean(previnc, na.rm = TRUE), 
+            previnc_lo = mean(previnc_lo, na.rm = TRUE), 
+            previnc_hi = mean(previnc_hi, na.rm = TRUE))
+
+pgWHOratios <- ggplot(gWHOratios) +
+  geom_line(aes(x = year, y = previnc, colour = type)) +
+  geom_ribbon(aes(x = year, ymin = previnc_lo, ymax = previnc_hi, fill = type), alpha = 0.2) +
+  scale_color_manual(values = c("#72A8FA", "#FA8072"), labels = c("2013 DB", "2016 DB")) +
+  scale_fill_manual(values = c("#72A8FA", "#FA8072"), labels = c("2013 DB", "2016 DB")) +
+  labs(x = 'Year', y = 'Prevalence/incidence ratio', colour = 'Source', fill = 'Source') +
+  theme_bw() +
+  theme(legend.position = 'bottom')
+ggsave(here("plots", "dataexp", "gWHOratios.png"), plot = pgWHOratios, width = 20, height = 15, units = "cm")
+
+regWHOratios <- WHOratios %>% 
+  group_by(type, year, g_whoregion) %>% 
+  summarise(previnc = mean(previnc, na.rm = TRUE), 
+            previnc_lo = mean(previnc_lo, na.rm = TRUE), 
+            previnc_hi = mean(previnc_hi, na.rm = TRUE))
+
+pregWHOratios <- ggplot(regWHOratios) +
+  facet_wrap(~g_whoregion) +
+  geom_line(aes(x = year, y = previnc, colour = type)) +
+  geom_ribbon(aes(x = year, ymin = previnc_lo, ymax = previnc_hi, fill = type), alpha = 0.2) +
+  scale_color_manual(values = c("#72A8FA", "#FA8072"), labels = c("2013 DB", "2016 DB")) +
+  scale_fill_manual(values = c("#72A8FA", "#FA8072"), labels = c("2013 DB", "2016 DB")) +
+  labs(x = 'Year', y = 'Prevalence/incidence ratio', colour = 'Source', fill = 'Source') +
+  theme_bw() +
+  theme(legend.position = 'bottom')
+ggsave(here("plots", "dataexp", "regWHOratios.png"), plot = pregWHOratios, width = 20, height = 15, units = "cm")
 
 # 3. IHME estimates ==========
 years <- 1990:2019
