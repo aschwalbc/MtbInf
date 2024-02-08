@@ -53,7 +53,7 @@ ggsave(here("plots", "dataexp", "WHO_inc.png"), plot = pWHOinc, width = 20, heig
 # 2. WHO prevalence/incidence ratios ==========
 WHO2013 <- as.data.table(import(here("data","sources","who","ratios","TB_burden_countries_2013.csv")))
 WHO2016 <- as.data.table(import(here("data","sources","who","ratios","TB_burden_countries_2016.csv")))
-survey <- as.data.table(import(here("data","sources","surveys","tbprev_surv.csv")))
+TBS <- as.data.table(import(here("data","sources","surveys","tbprev_surv.csv")))
 
 WHO2013 <- WHO2013 %>% 
   select(iso3, year, g_whoregion, starts_with('e_prev_num'), starts_with('e_inc_num')) %>% 
@@ -77,7 +77,7 @@ WHOratios <- WHO2013 %>%
 rm(WHO2013, WHO2016)
 
 iso <- unique(WHOratios$iso3)
-surv <- unique(survey$iso3)
+tbs <- unique(TBS$iso3)
 
 pdf(here("plots", "dataexp", "WHOratios.pdf"), height = 6, width = 10)
 for(i in iso) {
@@ -97,7 +97,7 @@ for(i in iso) {
 dev.off()
 
 pdf(here("plots", "dataexp", "WHOratios_surv.pdf"), height = 6, width = 10)
-for(i in surv) {
+for(i in tbs) {
   db <- filter(WHOratios, iso3 == i)
   p <- ggplot(db) +
     facet_wrap(~iso3) +
@@ -146,7 +146,53 @@ pregWHOratios <- ggplot(regWHOratios) +
   theme(legend.position = 'bottom')
 ggsave(here("plots", "dataexp", "regWHOratios.png"), plot = pregWHOratios, width = 20, height = 15, units = "cm")
 
-# 3. IHME estimates ==========
+# 3. Mean WHO prevalence/incidence ratios  ==========
+WHO2016 <- as.data.table(import(here("data","sources","who","ratios","TB_burden_countries_2016.csv")))
+WHO <- as.data.table(import(here("data","sources","who","WHOest_2000-2022.csv")))
+TBS <- as.data.table(import(here("data","sources","surveys","tbprev_surv.csv")))
+
+WHO2016 <- WHO2016 %>% 
+  select(iso3, year, g_whoregion, starts_with('e_prev_num'), starts_with('e_inc_num')) %>% 
+  filter(!e_prev_num < 10 | !e_inc_num < 10) %>% 
+  mutate(previnc = e_prev_num / e_inc_num, previnc_lo = e_prev_num_lo / e_inc_num_lo, previnc_hi = e_prev_num_hi / e_inc_num_hi) %>% 
+  mutate(type = '2016 DB') %>% 
+  select(iso3, year, g_whoregion, type, previnc, previnc_lo, previnc_hi) %>% 
+  group_by(iso3) %>% 
+  summarise(previnc = mean(previnc))
+
+WHO <- WHO %>% 
+  select(iso3, year, e_pop_num, starts_with('e_inc_num')) %>% 
+  left_join(WHO2016, by = 'iso3') %>% 
+  mutate(e_prev_100k = round(((e_inc_num * previnc) / e_pop_num) * 1e5, 2),
+         e_prev_100k_lo = round(((e_inc_num_lo * previnc) / e_pop_num) * 1e5, 2),
+         e_prev_100k_hi = round(((e_inc_num_hi * previnc) / e_pop_num) * 1e5, 2)) %>% 
+  select(iso3, year, starts_with('e_prev_100k'))
+
+TBS <- TBS %>% 
+  filter(agegp == '>15' & year >= 2000)
+
+iso <- sort(unique(TBS$iso3))
+
+pdf(here("plots", "dataexp", "WHOTBsurv_prev.pdf"), height = 6, width = 10)
+for(i in iso) {
+  dbwho <- filter(WHO, iso3 == i)
+  dbtbs <- filter(TBS, iso3 == i)
+  p <- ggplot() +
+    geom_line(dbwho, mapping = aes(x = year, y = e_prev_100k), colour = '#FA8072') +
+    geom_ribbon(dbwho, mapping = aes(x = year, ymin = e_prev_100k_lo, ymax = e_prev_100k_hi), fill = '#FA8072', alpha = 0.2) +
+    geom_point(dbtbs, mapping = aes(x = year, y = prev, shape = type), colour = '#A05249') +
+    geom_errorbar(dbtbs, mapping = aes(x = year, ymin = lo, ymax = hi), colour = '#A05249', width = 0.8) +
+    scale_shape_manual(values = c(16, 17), labels = c("Bact+", "Smear+")) +
+    labs(x = 'Year', y = 'TB prevalence rate per 100k', title = 'WHO vs TB prevalence surveys',
+         subtitle = paste(i), shape = 'Type') +
+    theme_bw() +
+    theme(legend.position = 'bottom')
+  print(p)
+}
+dev.off()
+rm(dbwho, dbtbs, p, i, iso)
+
+# 4. IHME estimates ==========
 years <- 1990:2019
 IHME <- list()
 
@@ -175,10 +221,10 @@ pIHMEinc <- ggplot(rbind(WHOinc, IHME)) +
   theme(legend.position = 'bottom')
 ggsave(here("plots", "dataexp", "IHME_inc.png"), plot = pIHMEinc, width = 20, height = 15, units = "cm")
 
-# 4. TB prevalence surveys ==========
+# 5. TB prevalence surveys ==========
 IHME <- as.data.table(import(here("data","sources","ihme","IHME-GBD.csv")))
 IHMEkey <- as.data.table(import(here("data","sources","ihme","IHMEkey.csv"))) 
-survey <- as.data.table(import(here("data","sources","surveys","tbprev_surv.csv")))
+TBS <- as.data.table(import(here("data","sources","surveys","tbprev_surv.csv")))
 WPP <- import(here("data","sources","pop","WPP_Pop_1950-2100.csv"))
 
 IHME <- IHME %>%
@@ -222,11 +268,11 @@ IHME <- IHME %>%
   mutate(prev = prev / pop * 1e5, lo = lo / pop * 1e5, hi = hi / pop * 1e5) %>% 
   mutate(type = 'ihme') %>% 
   within(rm(pop)) %>% 
-  rbind(survey) %>% 
+  rbind(TBS) %>% 
   select(iso3, year, agegp, type, prev, lo, hi) %>% 
   mutate(iso3 = as.factor(iso3)) %>% 
   arrange(iso3, year, agegp)
-rm(WPP, survey)
+rm(WPP, TBS)
 
 iso <- unique(IHME$iso3)
 age <- unique(IHME$agegp)
