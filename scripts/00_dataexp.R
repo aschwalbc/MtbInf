@@ -192,6 +192,27 @@ for(i in iso) {
 dev.off()
 rm(dbwho, dbtbs, p, i, iso)
 
+iso <- sort(unique(TBS$iso3[TBS$type == 'bac' & !is.na(TBS$prev)]))
+
+pdf(here("plots", "dataexp", "WHOTBsurv_prev_bac.pdf"), height = 6, width = 10)
+for(i in iso) {
+  dbwho <- filter(WHO, iso3 == i)
+  dbtbs <- filter(TBS, iso3 == i & type == 'bac')
+  p <- ggplot() +
+    geom_line(dbwho, mapping = aes(x = year, y = e_prev_100k), colour = '#FA8072') +
+    geom_ribbon(dbwho, mapping = aes(x = year, ymin = e_prev_100k_lo, ymax = e_prev_100k_hi), fill = '#FA8072', alpha = 0.2) +
+    geom_point(dbtbs, mapping = aes(x = year, y = prev, shape = type), colour = '#A05249') +
+    geom_errorbar(dbtbs, mapping = aes(x = year, ymin = lo, ymax = hi), colour = '#A05249', width = 0.8) +
+    scale_shape_manual(values = 16, labels = "Bact+") +
+    labs(x = 'Year', y = 'TB prevalence rate per 100k', title = 'WHO vs TB prevalence surveys',
+         subtitle = paste(i), shape = 'Type') +
+    theme_bw() +
+    theme(legend.position = 'bottom')
+  print(p)
+}
+dev.off()
+rm(dbwho, dbtbs, p, i, iso)
+
 # 4. IHME estimates ==========
 years <- 1990:2019
 IHME <- list()
