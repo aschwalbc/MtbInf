@@ -193,7 +193,8 @@ rm(rev, revE)
 
 # 3. ARI database ==========
 ARI <- ARI %>% 
-  rbind(CAU, REV)
+  rbind(CAU, REV) %>% 
+  filter(lari != -Inf)
 rm(CAU, REV, rev, revE)
 
 export(ARI, here("data","ari","ARIrev.Rdata"))
