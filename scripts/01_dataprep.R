@@ -151,7 +151,7 @@ ARI <- GTB %>%
   mutate(sd = (prev_hi - prev_lo) / (3.92 * prev)) %>% 
   mutate(E = sqrt(sd^2 + vstb / stb^2 + vS + vFr / mFr^2) * revE) %>% 
   select(iso3, year, ari, E, lari) %>% 
-  mutate(type = 'Prevalence estimate')
+  mutate(type = 'prev')
 rm(stb, vstb, GTB)
 
 # 2. Direct ARI estimates ==========
@@ -166,7 +166,7 @@ CAU <- CAU %>%
   mutate(E = sqrt(var) / ari) %>% 
   mutate(ari = ari * rev, E = E * revE) %>% 
   mutate(lari = log(ari)) %>% 
-  mutate(type = 'Mtb survey') %>% 
+  mutate(type = 'surv') %>% 
   select(iso3, year, ari, E, lari, type) %>% 
   na.omit() %>%
   mutate(iso3 = factor(iso3)) %>% 
@@ -183,7 +183,7 @@ REV <- REV %>%
   mutate(E = sqrt(var) / ari) %>% 
   mutate(ari = ari * rev, E = E * revE) %>% 
   mutate(lari = log(ari)) %>% 
-  mutate(type = 'Mtb survey') %>% 
+  mutate(type = 'surv') %>% 
   select(iso3, year, ari, E, lari, type) %>% 
   na.omit() %>%
   mutate(iso3 = factor(iso3)) %>% 
