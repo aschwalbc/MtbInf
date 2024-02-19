@@ -195,6 +195,6 @@ rm(rev, revE)
 ARI <- ARI %>% 
   rbind(CAU, REV) %>% 
   filter(lari != -Inf)
-rm(CAU, REV, rev, revE)
+rm(CAU, REV)
 
 export(ARI, here("data","ari","ARIrev.Rdata"))
