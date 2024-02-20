@@ -199,5 +199,5 @@ ARI <- ARI %>%
   filter(lari != -Inf)
 rm(CAU, REV)
 
-export(ARI, here("data","ari","ARIrev.Rdata"))
-export(ARI, here("data","ari","ARInorev.Rdata"))
+export(ARI, here("data","ari","ARI_rev.Rdata"))
+export(ARI, here("data","ari","ARI_norev.Rdata"))
