@@ -55,6 +55,8 @@ rm(mu, sig)
 # 1.3.2 Reversion adjustment
 rev <- 3.5 # True ARI = 2-5x higher, 3.5 for average (Schwalb AJE 2023)
 revE <- 1.5 # Increasing variance estimates by 50%
+rev <- 1 # No reversion adjustment
+revE <- 1 # No reversion adjustment
 
 # 1.3.3 HIV in TB
 HIV <- WHO %>% 
@@ -198,3 +200,4 @@ ARI <- ARI %>%
 rm(CAU, REV)
 
 export(ARI, here("data","ari","ARIrev.Rdata"))
+export(ARI, here("data","ari","ARInorev.Rdata"))
