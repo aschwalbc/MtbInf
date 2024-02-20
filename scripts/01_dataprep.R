@@ -12,7 +12,7 @@ options(scipen = 999)
 
 # 1. Indirect ARI estimates ==========
 # 1.1 WHO TB prevalence/incidence ratio
-WHOr <- as.data.table(import(here("data","sources","who","ratios","TB_burden_countries_2016.csv")))
+WHOr <- as.data.table(import(here("data","sources","who","WHOest_1990-2014.csv")))
 
 WHOr <- WHOr %>% 
   select(iso3, year, g_whoregion, starts_with('e_prev_num'), starts_with('e_inc_num')) %>% 
