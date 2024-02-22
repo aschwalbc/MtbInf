@@ -136,21 +136,21 @@ relARI <- WHOinc %>%
   mutate(refari = ifelse(!is.na(refari), refari, first(na.omit(refari)))) %>%
   ungroup() %>% 
   mutate(relari = ari / refari) %>% 
-  select(iso3, reg, agegp = ageAO, relari) %>% 
-  arrange(iso3, agegp)
+  select(iso3, reg, ageARI = ageAO, relari) %>% 
+  arrange(iso3, ageARI)
 rm(WHOinc, MIX)
 
 relARIreg <- relARI %>%
-  group_by(reg, agegp) %>%
+  group_by(reg, ageARI) %>%
   summarise(relari = mean(relari, na.rm = TRUE))
 
 relARI %>%
-  group_by(agegp) %>%
+  group_by(ageARI) %>%
   summarise(relari = mean(relari, na.rm = TRUE))
 
 F3 <- ggplot() +
   facet_wrap(~reg) +
-  geom_line(relARI, mapping = aes(x = agegp, y = relari, group = iso3)) +
+  geom_line(relARI, mapping = aes(x = ageARI, y = relari, group = iso3)) +
   geom_hline(yintercept = 1, col = 2) +
   xlab('Age') +
   ylab('Relative ARI') +
@@ -166,7 +166,7 @@ rm(relARI)
 
 ARIna <- ARI %>% 
   filter(is.na(relari)) %>% 
-  within(rm(agegp, relari)) %>% 
+  within(rm(ageARI, relari)) %>% 
   left_join(relARIreg, by = c('reg'), relationship = 'many-to-many')
 rm(relARIreg)
 
@@ -174,7 +174,7 @@ ARI <- ARI %>%
   filter(!is.na(relari)) %>% 
   rbind(ARIna) %>% 
   mutate(ari = exp(lari + (log(relari)))) %>% 
-  select(year, iso3, reg, agegp, ari) %>% 
+  select(year, iso3, reg, ageARI, ari) %>% 
   arrange(iso3, year)
 rm(ARIna)
 
