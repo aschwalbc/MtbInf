@@ -16,12 +16,11 @@ WHOr <- as.data.table(import(here("data","sources","who","WHOest_1990-2014.csv")
 
 WHOr <- WHOr %>% 
   select(iso3, year, g_whoregion, starts_with('e_prev_num'), starts_with('e_inc_num')) %>% 
-  filter(!e_prev_num < 10 | !e_inc_num < 10) %>% 
   mutate(previnc = e_prev_num / e_inc_num, previnc_lo = e_prev_num_lo / e_inc_num_lo, previnc_hi = e_prev_num_hi / e_inc_num_hi) %>% 
-  mutate(type = '2016 DB') %>% 
-  select(iso3, year, g_whoregion, type, previnc, previnc_lo, previnc_hi) %>% 
+  select(iso3, year, g_whoregion, previnc, previnc_lo, previnc_hi) %>% 
   group_by(iso3) %>% 
-  summarise(previnc = mean(previnc))
+  summarise(previnc = mean(previnc)) %>% 
+  mutate(previnc = ifelse(is.finite(previnc), previnc, 1))
 
 # 1.2 WHO TB incidence estimates
 WHO <- as.data.table(import(here("data","sources","who","WHOest_2000-2022.csv")))

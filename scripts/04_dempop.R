@@ -86,7 +86,8 @@ ARI <- import(here("data","ari","mARI_rev_mix.Rdata"))
 
 ARI <- ARI %>%
   left_join(WPP, by = c("iso3", "year", "ageARI")) %>% 
-  arrange(iso3, year, ageWPP, ageARI)
+  arrange(iso3, year, ageWPP, ageARI) %>% 
+  filter(!is.na(ageWPP))
 rm(WPP)
 
 export(ARI, here("data","ari","mARI_rev_mix_pop.Rdata"))

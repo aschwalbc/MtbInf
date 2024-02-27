@@ -1,20 +1,18 @@
-## Analysis code for Schwalb et al. 2023
+## Analysis code for Schwalb et al. 2024
 ## Distributed under CC BY 4.0
-## RScript 10: Self-clearance.R
+## RScript: SC_shiny.R
 
 # Packages ==========
-library(shiny)       # Build interactive applications
-library(data.table)  # Faster than data.frame
-library(tidyverse)   # To use tidyverse
-library(deSolve)     # Solvers for ordinary differential equations
+library(shiny)
+library(data.table)
+library(tidyverse)
+library(deSolve)
 
 # 1. Self-clear model ==========
 sc_model <- function(times, state, parms) {
-  # Define states
   I <- state["I"]
   S <- state["S"]
   
-  # Extract parameters based on time intervals
   gamma <- parms[findInterval(floor(times), parms$time), "gamma"]
   
   # Define differential equations
@@ -29,9 +27,7 @@ times <- seq(from = 0, to = 10, by = 1)
 
 state <- c(I = 1000, S = 0)
 
-parameters <- data.table(time = c(0, 1, 2), gamma = c(1.12, 1.12, 0.0)) # original (Horton et al.)
-parameters <- data.table(time = c(0, 1, 2), gamma = c(1.83, 1.83, 0.0)) # revised (Horton et al.)
-parameters <- data.table(time = c(0, 1, 2), gamma = c(0.23, 0.23, 0.23)) # constant
+parameters <- data.table(time = c(0, 1, 2), gamma = c(1.83, 1.83, 0.0))
 
 ode_results <- ode(y = state, times = times, func = sc_model, parms = parameters, method = "lsoda")
 

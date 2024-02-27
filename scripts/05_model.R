@@ -1,123 +1,116 @@
-## Analysis code for Schwalb et al. 2023
+## Analysis code for Schwalb et al. 2024
 ## Distributed under CC BY 4.0
-## RScript 06: Model.R
+## RScript 05: Model.R
 
 # Packages ==========
-library(rio) # Facilitates importing and exporting
-library(here) # Building file paths
-library(tidyverse) # To use tidyverse
-library(ggplot2) # To build comparative plots
-library(deSolve) # Solvers for ordinary differential equations
-library(tictoc) # Times code run
-library(data.table) # Faster than data.frame
+library(rio)
+library(here)
+library(tidyverse)
+library(deSolve)
+library(tictoc)
+library(data.table)
 
-# 1. Load data ==========
-ARI <- import(here("data","ari","mARI_IHME_rev_mix_pop.Rdata")) # IHME - Reversion - Mixing
-# ARI <- import(here("data","ari","mARI_IHME_norev_mix_pop.Rdata")) # IHME - No reversion - Mixing
-# ARI <- import(here("data","ari","mARI_IHME_rev_nomix_pop.Rdata")) # IHME - Reversion - No mixing
-# ARI <- import(here("data","ari","mARI_IHME_norev_nomix_pop.Rdata")) # IHME - No reversion - No mixing
-# ARI <- import(here("data","ari","mARI_WHO_norev_nomix_pop.Rdata")) # WHO - No reversion - No mixing
+# 1. Age-specific parameters ==========
+ARI <- import(here("data","ari","mARI_rev_mix_pop.Rdata"))
 
-# 2. Data curation ==========
-# Extract age group-specific parameters
 agp_0004 <- ARI %>% 
-  filter(agegp == '00-04') %>% 
+  filter(ageWPP == '00-04') %>% 
   mutate(lambda_0014 = ari) %>%
   rename(fp_0004 = fpop, theta = birthrate) %>% 
   select(iso3,year,lambda_0014,theta,fp_0004)
 
 agp_0509 <- ARI %>% 
-  filter(agegp == '05-09') %>% 
+  filter(ageWPP == '05-09') %>% 
   mutate(lambda_0014 = ari) %>%
   rename(fp_0509 = fpop) %>% 
   select(iso3,year,lambda_0014,fp_0509)
 
 agp_1014 <- ARI %>% 
-  filter(agegp == '10-14') %>% 
+  filter(ageWPP == '10-14') %>% 
   mutate(lambda_0014 = ari) %>%
   rename(fp_1014 = fpop) %>% 
   select(iso3,year,lambda_0014,fp_1014)
 
 agp_1519 <- ARI %>% 
-  filter(agegp == '15-19') %>% 
+  filter(ageWPP == '15-19') %>% 
   mutate(lambda_1544 = ari) %>%
   rename(fp_1519 = fpop) %>% 
   select(iso3,year,lambda_1544,fp_1519)
 
 agp_2024 <- ARI %>% 
-  filter(agegp == '20-24') %>% 
+  filter(ageWPP == '20-24') %>% 
   mutate(lambda_1544 = ari) %>%
   rename(fp_2024 = fpop) %>% 
   select(iso3,year,lambda_1544,fp_2024)
 
 agp_2529 <- ARI %>% 
-  filter(agegp == '25-29') %>% 
+  filter(ageWPP == '25-29') %>% 
   mutate(lambda_1544 = ari) %>%
   rename(fp_2529 = fpop) %>% 
   select(iso3,year,lambda_1544,fp_2529)
 
 agp_3034 <- ARI %>% 
-  filter(agegp == '30-34') %>% 
+  filter(ageWPP == '30-34') %>% 
   mutate(lambda_1544 = ari) %>%
   rename(fp_3034 = fpop) %>% 
   select(iso3,year,lambda_1544,fp_3034)
 
 agp_3539 <- ARI %>% 
-  filter(agegp == '35-39') %>% 
+  filter(ageWPP == '35-39') %>% 
   mutate(lambda_1544 = ari) %>%
   rename(fp_3539 = fpop) %>% 
   select(iso3,year,lambda_1544,fp_3539)
 
 agp_4044 <- ARI %>% 
-  filter(agegp == '40-44') %>% 
+  filter(ageWPP == '40-44') %>% 
   mutate(lambda_1544 = ari) %>%
   rename(fp_4044 = fpop) %>% 
   select(iso3,year,lambda_1544,fp_4044)
 
 agp_4549 <- ARI %>% 
-  filter(agegp == '45-49') %>% 
+  filter(ageWPP == '45-49') %>% 
   mutate(lambda_4500 = ari) %>%
   rename(fp_4549 = fpop) %>% 
   select(iso3,year,lambda_4500,fp_4549)
 
 agp_5054 <- ARI %>% 
-  filter(agegp == '50-54') %>% 
+  filter(ageWPP == '50-54') %>% 
   mutate(lambda_4500 = ari) %>%
   rename(fp_5054 = fpop) %>% 
   select(iso3,year,lambda_4500,fp_5054)
 
 agp_5559 <- ARI %>% 
-  filter(agegp == '55-59') %>% 
+  filter(ageWPP == '55-59') %>% 
   mutate(lambda_4500 = ari) %>%
   rename(fp_5559 = fpop) %>% 
   select(iso3,year,lambda_4500,fp_5559)
 
 agp_6064 <- ARI %>% 
-  filter(agegp == '60-64') %>% 
+  filter(ageWPP == '60-64') %>% 
   mutate(lambda_4500 = ari) %>%
   rename(fp_6064 = fpop) %>% 
   select(iso3,year,lambda_4500,fp_6064)
 
 agp_6569 <- ARI %>% 
-  filter(agegp == '65-69') %>% 
+  filter(ageWPP == '65-69') %>% 
   mutate(lambda_4500 = ari) %>%
   rename(fp_6569 = fpop) %>% 
   select(iso3,year,lambda_4500,fp_6569)
 
 agp_7074 <- ARI %>% 
-  filter(agegp == '70-74') %>% 
+  filter(ageWPP == '70-74') %>% 
   mutate(lambda_4500 = ari) %>%
   rename(fp_7074 = fpop) %>% 
   select(iso3,year,lambda_4500,fp_7074)
 
 agp_7579 <- ARI %>% 
-  filter(agegp == '75-79') %>% 
+  filter(ageWPP == '75-79') %>% 
   mutate(lambda_4500 = ari) %>%
   rename(fp_7579 = fpop) %>% 
   select(iso3,year,lambda_4500,fp_7579)
 
 agp_8000 <- ARI %>% 
-  filter(agegp == '80+') %>% 
+  filter(ageWPP == '80+') %>% 
   mutate(lambda_4500 = ari) %>%
   rename(fp_8000 = fpop) %>% 
   select(iso3,year,lambda_4500,fp_8000)
@@ -139,14 +132,15 @@ parameters <- agp_0004 %>% # Create parameter dataframe
   left_join(agp_7074, by = c("iso3","year","lambda_4500")) %>% 
   left_join(agp_7579, by = c("iso3","year","lambda_4500")) %>% 
   left_join(agp_8000, by = c("iso3","year","lambda_4500")) %>% 
-  #mutate(time = year - 1950) %>% 
-  mutate(time = year - 1934) %>% 
+  mutate(time = year - 1950) %>% 
   select(iso3,time,starts_with("lambda"),starts_with("fp"),"theta")
+
 rm(list = ls(pattern = "^agp"))
+
 parameters <- as.data.table(parameters)
 
+# 2. Mtb Model ==========
 sis <- function(times, state, parms) {
-  ## Define states
   S0004  <- state["S0004"]; I0004a  <- state["I0004a"]; I0004b  <- state["I0004b"]; I0004c  <- state["I0004c"]; I0004d  <- state["I0004d"]
   S0509  <- state["S0509"]; I0509a  <- state["I0509a"]; I0509b  <- state["I0509b"]; I0509c  <- state["I0509c"]; I0509d  <- state["I0509d"]
   S1014  <- state["S1014"]; I1014a  <- state["I1014a"]; I1014b  <- state["I1014b"]; I1014c  <- state["I1014c"]; I1014d  <- state["I1014d"]
@@ -165,24 +159,22 @@ sis <- function(times, state, parms) {
   S7579  <- state["S7579"]; I7579a  <- state["I7579a"]; I7579b  <- state["I7579b"]; I7579c  <- state["I7579c"]; I7579d  <- state["I7579d"]
   S8000  <- state["S8000"]; I8000a  <- state["I8000a"]; I8000b  <- state["I8000b"]; I8000c  <- state["I8000c"]; I8000d  <- state["I8000d"]
   
-  # Extract parameters
-  gamma_a <- 1.13 # Self-clearance rate (A) [Horton et al. 2023]
-  gamma_b <- 1.13 # Self-clearance rate (B) [Horton et al. 2023]
+  gamma_a <- 1.83 # Self-clearance rate (A) [Horton et al. 2023]
+  gamma_b <- 1.83 # Self-clearance rate (B) [Horton et al. 2023]
   gamma_c <- 0.0 # Self-clearance rate (C)
   gamma_d <- 0.0 # Self-clearance rate (D)
   alpha <- 1/5 # Age transition
-  kappa_ab <- 1 # Transition between infection years (A-B)
-  kappa_bc <- 1 # Transition between infection years (B-C)
-  kappa_cd <- 1 # Transition between infection years (C-D)
+  kappa_ab <- 1 # Transition between infection years (A-B) # REVIEW
+  kappa_bc <- 1 # Transition between infection years (B-C) # REVIEW
+  kappa_cd <- 1 # Transition between infection years (C-D) # REVIEW
   
-  par <- names(parms) # Extract parameter names
-  par <- par[-c(1,2)] # Remove first two columns
-  interps <- list() # List for interpolations
+  par <- names(parms)
+  par <- par[-c(1,2)]
+  interps <- list()
   for(p in par) {
-    interps[[p]] <- approxfun(parms$time, parms[[p]], method = 'linear', rule = 2) # Creates function for interpolation
+    interps[[p]] <- approxfun(parms$time, parms[[p]], method = 'linear', rule = 2)
   }
 
-  # Define differential equations
   dS0004  <- -(interps[["lambda_0014"]](times)*S0004) + (gamma_a*I0004a) + (gamma_b*I0004b) + (gamma_c*I0004c) + (gamma_d*I0004d) + (interps[["theta"]](times)*(1/interps[["fp_0004"]](times))*(1-S0004))
   dI0004a <-  (interps[["lambda_0014"]](times)*S0004) - (gamma_a*I0004a) - (kappa_ab*I0004a) - (interps[["theta"]](times)*(1/interps[["fp_0004"]](times))*I0004a)
   dI0004b <- -(gamma_b*I0004b) - (kappa_bc*I0004b) + (kappa_ab*I0004a) - (interps[["theta"]](times)*(1/interps[["fp_0004"]](times))*I0004b)
@@ -295,109 +287,107 @@ sis <- function(times, state, parms) {
   return(out)
 }
 
-times <- seq(from = 0, to = 116, by = 1)
-
-countries <- unique(ARI$iso3) # 166 countries
-#countries <- c("JPN","IND","CHN")
-#countries <- "JPN"
+# 3. Model run ==========
+times <- seq(from = 0, to = 100, by = 1)
+isos <- unique(ARI$iso3) # 204 countries
 list_df <- list()
 
 tic()
-
-for (c in 1:(length(countries))){
-  iso <- countries[c]
+for (c in 1:(length(isos))){
+  iso <- 'IND'
+  #iso <- isos[c]
   print(iso)
   
-  parms <- as.data.table(parameters) %>% filter(iso3 == iso) # Filter parameters
+  parms <- as.data.table(parameters) %>% filter(iso3 == iso)
   ari <- as.data.table(ARI) %>% filter(iso3 == iso) # Filter ARI
 
   maxage <- c(5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,90)
   
-  state <- c(S0004 = exp((-(ari[year == 1950 & acat == "0-14", ari][1])*2.5)), 
-             I0004a = (1-exp((-(ari[year == 1950 & acat == "0-14", ari][1])*2.5)))*(1/(sum(1+1+2+(maxage[1]-3)))), 
-             I0004b = (1-exp((-(ari[year == 1950 & acat == "0-14", ari][1])*2.5)))*(1/(sum(1+1+2+(maxage[1]-3)))), 
-             I0004c = (1-exp((-(ari[year == 1950 & acat == "0-14", ari][1])*2.5)))*(2/(sum(1+1+2+(maxage[1]-3)))), 
-             I0004d = (1-exp((-(ari[year == 1950 & acat == "0-14", ari][1])*2.5)))*((maxage[1]-3)/(sum(1+1+2+(maxage[1]-3)))), 
-             S0509 = exp((-(ari[year == 1950 & acat == "0-14", ari][1])*7.5)), 
-             I0509a = (1-exp((-(ari[year == 1950 & acat == "0-14", ari][1])*7.5)))*(1/(sum(1+1+2+(maxage[2]-3)))), 
-             I0509b = (1-exp((-(ari[year == 1950 & acat == "0-14", ari][1])*7.5)))*(1/(sum(1+1+2+(maxage[2]-3)))), 
-             I0509c = (1-exp((-(ari[year == 1950 & acat == "0-14", ari][1])*7.5)))*(2/(sum(1+1+2+(maxage[2]-3)))), 
-             I0509d = (1-exp((-(ari[year == 1950 & acat == "0-14", ari][1])*7.5)))*((maxage[2]-3)/(sum(1+1+2+(maxage[2]-3)))),
-             S1014 = exp((-(ari[year == 1950 & acat == "0-14", ari][1])*12.5)), 
-             I1014a = (1-exp((-(ari[year == 1950 & acat == "0-14", ari][1])*12.5)))*(1/(sum(1+1+2+(maxage[3]-3)))), 
-             I1014b = (1-exp((-(ari[year == 1950 & acat == "0-14", ari][1])*12.5)))*(1/(sum(1+1+2+(maxage[3]-3)))), 
-             I1014c = (1-exp((-(ari[year == 1950 & acat == "0-14", ari][1])*12.5)))*(2/(sum(1+1+2+(maxage[3]-3)))),
-             I1014d = (1-exp((-(ari[year == 1950 & acat == "0-14", ari][1])*12.5)))*((maxage[3]-3)/(sum(1+1+2+(maxage[3]-3)))), 
-             S1519 = exp((-(ari[year == 1950 & acat == "15-44", ari][1])*17.5)), 
-             I1519a = (1-exp((-(ari[year == 1950 & acat == "15-44", ari][1])*17.5)))*(1/(sum(1+1+2+(maxage[4]-3)))), 
-             I1519b = (1-exp((-(ari[year == 1950 & acat == "15-44", ari][1])*17.5)))*(1/(sum(1+1+2+(maxage[4]-3)))), 
-             I1519c = (1-exp((-(ari[year == 1950 & acat == "15-44", ari][1])*17.5)))*(2/(sum(1+1+2+(maxage[4]-3)))),
-             I1519d = (1-exp((-(ari[year == 1950 & acat == "15-44", ari][1])*17.5)))*((maxage[4]-3)/(sum(1+1+2+(maxage[4]-3)))),
-             S2024 = exp((-(ari[year == 1950 & acat == "15-44", ari][1])*22.5)), 
-             I2024a = (1-exp((-(ari[year == 1950 & acat == "15-44", ari][1])*22.5)))*(1/(sum(1+1+2+(maxage[5]-3)))), 
-             I2024b = (1-exp((-(ari[year == 1950 & acat == "15-44", ari][1])*22.5)))*(1/(sum(1+1+2+(maxage[5]-3)))), 
-             I2024c = (1-exp((-(ari[year == 1950 & acat == "15-44", ari][1])*22.5)))*(2/(sum(1+1+2+(maxage[5]-3)))),
-             I2024d = (1-exp((-(ari[year == 1950 & acat == "15-44", ari][1])*22.5)))*((maxage[5]-3)/(sum(1+1+2+(maxage[5]-3)))), 
-             S2529 = exp((-(ari[year == 1950 & acat == "15-44", ari][1])*27.5)), 
-             I2529a = (1-exp((-(ari[year == 1950 & acat == "15-44", ari][1])*27.5)))*(1/(sum(1+1+2+(maxage[6]-3)))), 
-             I2529b = (1-exp((-(ari[year == 1950 & acat == "15-44", ari][1])*27.5)))*(1/(sum(1+1+2+(maxage[6]-3)))),
-             I2529c = (1-exp((-(ari[year == 1950 & acat == "15-44", ari][1])*27.5)))*(2/(sum(1+1+2+(maxage[6]-3)))), 
-             I2529d = (1-exp((-(ari[year == 1950 & acat == "15-44", ari][1])*27.5)))*((maxage[6]-3)/(sum(1+1+2+(maxage[6]-3)))),
-             S3034 = exp((-(ari[year == 1950 & acat == "15-44", ari][1])*32.5)), 
-             I3034a = (1-exp((-(ari[year == 1950 & acat == "15-44", ari][1])*32.5)))*(1/(sum(1+1+2+(maxage[7]-3)))), 
-             I3034b = (1-exp((-(ari[year == 1950 & acat == "15-44", ari][1])*32.5)))*(1/(sum(1+1+2+(maxage[7]-3)))), 
-             I3034c = (1-exp((-(ari[year == 1950 & acat == "15-44", ari][1])*32.5)))*(2/(sum(1+1+2+(maxage[7]-3)))), 
-             I3034d = (1-exp((-(ari[year == 1950 & acat == "15-44", ari][1])*32.5)))*((maxage[7]-3)/(sum(1+1+2+(maxage[7]-3)))), 
-             S3539 = exp((-(ari[year == 1950 & acat == "15-44", ari][1])*37.5)), 
-             I3539a = (1-exp((-(ari[year == 1950 & acat == "15-44", ari][1])*37.5)))*(1/(sum(1+1+2+(maxage[8]-3)))), 
-             I3539b = (1-exp((-(ari[year == 1950 & acat == "15-44", ari][1])*37.5)))*(1/(sum(1+1+2+(maxage[8]-3)))),
-             I3539c = (1-exp((-(ari[year == 1950 & acat == "15-44", ari][1])*37.5)))*(2/(sum(1+1+2+(maxage[8]-3)))),
-             I3539d = (1-exp((-(ari[year == 1950 & acat == "15-44", ari][1])*37.5)))*((maxage[8]-3)/(sum(1+1+2+(maxage[8]-3)))),
-             S4044 = exp((-(ari[year == 1950 & acat == "15-44", ari][1])*42.5)), 
-             I4044a = (1-exp((-(ari[year == 1950 & acat == "15-44", ari][1])*42.5)))*(1/(sum(1+1+2+(maxage[9]-3)))), 
-             I4044b = (1-exp((-(ari[year == 1950 & acat == "15-44", ari][1])*42.5)))*(1/(sum(1+1+2+(maxage[9]-3)))), 
-             I4044c = (1-exp((-(ari[year == 1950 & acat == "15-44", ari][1])*42.5)))*(2/(sum(1+1+2+(maxage[9]-3)))),
-             I4044d = (1-exp((-(ari[year == 1950 & acat == "15-44", ari][1])*42.5)))*((maxage[9]-3)/(sum(1+1+2+(maxage[9]-3)))), 
-             S4549 = exp((-(ari[year == 1950 & acat == "45+", ari][1])*47.5)), 
-             I4549a = (1-exp((-(ari[year == 1950 & acat == "45+", ari][1])*47.5)))*(1/(sum(1+1+2+(maxage[10]-3)))), 
-             I4549b = (1-exp((-(ari[year == 1950 & acat == "45+", ari][1])*47.5)))*(1/(sum(1+1+2+(maxage[10]-3)))),
-             I4549c = (1-exp((-(ari[year == 1950 & acat == "45+", ari][1])*47.5)))*(2/(sum(1+1+2+(maxage[10]-3)))),
-             I4549d = (1-exp((-(ari[year == 1950 & acat == "45+", ari][1])*47.5)))*((maxage[10]-3)/(sum(1+1+2+(maxage[10]-3)))),
-             S5054 = exp((-(ari[year == 1950 & acat == "45+", ari][1])*52.5)), 
-             I5054a = (1-exp((-(ari[year == 1950 & acat == "45+", ari][1])*52.5)))*(1/(sum(1+1+2+(maxage[11]-3)))), 
-             I5054b = (1-exp((-(ari[year == 1950 & acat == "45+", ari][1])*52.5)))*(1/(sum(1+1+2+(maxage[11]-3)))), 
-             I5054c = (1-exp((-(ari[year == 1950 & acat == "45+", ari][1])*52.5)))*(2/(sum(1+1+2+(maxage[11]-3)))), 
-             I5054d = (1-exp((-(ari[year == 1950 & acat == "45+", ari][1])*52.5)))*((maxage[11]-3)/(sum(1+1+2+(maxage[11]-3)))), 
-             S5559 = exp((-(ari[year == 1950 & acat == "45+", ari][1])*57.5)), 
-             I5559a = (1-exp((-(ari[year == 1950 & acat == "45+", ari][1])*57.5)))*(1/(sum(1+1+2+(maxage[12]-3)))), 
-             I5559b = (1-exp((-(ari[year == 1950 & acat == "45+", ari][1])*57.5)))*(1/(sum(1+1+2+(maxage[12]-3)))), 
-             I5559c = (1-exp((-(ari[year == 1950 & acat == "45+", ari][1])*57.5)))*(2/(sum(1+1+2+(maxage[12]-3)))),
-             I5559d = (1-exp((-(ari[year == 1950 & acat == "45+", ari][1])*57.5)))*((maxage[12]-3)/(sum(1+1+2+(maxage[12]-3)))),
-             S6064 = exp((-(ari[year == 1950 & acat == "45+", ari][1])*62.5)), 
-             I6064a = (1-exp((-(ari[year == 1950 & acat == "45+", ari][1])*62.5)))*(1/(sum(1+1+2+(maxage[13]-3)))), 
-             I6064b = (1-exp((-(ari[year == 1950 & acat == "45+", ari][1])*62.5)))*(1/(sum(1+1+2+(maxage[13]-3)))),
-             I6064c = (1-exp((-(ari[year == 1950 & acat == "45+", ari][1])*62.5)))*(2/(sum(1+1+2+(maxage[13]-3)))),
-             I6064d = (1-exp((-(ari[year == 1950 & acat == "45+", ari][1])*62.5)))*((maxage[13]-3)/(sum(1+1+2+(maxage[13]-3)))), 
-             S6569 = exp((-(ari[year == 1950 & acat == "45+", ari][1])*67.5)), 
-             I6569a = (1-exp((-(ari[year == 1950 & acat == "45+", ari][1])*67.5)))*(1/(sum(1+1+2+(maxage[14]-3)))), 
-             I6569b = (1-exp((-(ari[year == 1950 & acat == "45+", ari][1])*67.5)))*(1/(sum(1+1+2+(maxage[14]-3)))),
-             I6569c = (1-exp((-(ari[year == 1950 & acat == "45+", ari][1])*67.5)))*(2/(sum(1+1+2+(maxage[14]-3)))),
-             I6569d = (1-exp((-(ari[year == 1950 & acat == "45+", ari][1])*67.5)))*((maxage[14]-3)/(sum(1+1+2+(maxage[14]-3)))),
-             S7074 = exp((-(ari[year == 1950 & acat == "45+", ari][1])*72.5)), 
-             I7074a = (1-exp((-(ari[year == 1950 & acat == "45+", ari][1])*72.5)))*(1/(sum(1+1+2+(maxage[15]-3)))), 
-             I7074b = (1-exp((-(ari[year == 1950 & acat == "45+", ari][1])*72.5)))*(1/(sum(1+1+2+(maxage[15]-3)))),
-             I7074c = (1-exp((-(ari[year == 1950 & acat == "45+", ari][1])*72.5)))*(2/(sum(1+1+2+(maxage[15]-3)))), 
-             I7074d = (1-exp((-(ari[year == 1950 & acat == "45+", ari][1])*72.5)))*((maxage[15]-3)/(sum(1+1+2+(maxage[15]-3)))),
-             S7579 = exp((-(ari[year == 1950 & acat == "45+", ari][1])*77.5)), 
-             I7579a = (1-exp((-(ari[year == 1950 & acat == "45+", ari][1])*77.5)))*(1/(sum(1+1+2+(maxage[16]-3)))), 
-             I7579b = (1-exp((-(ari[year == 1950 & acat == "45+", ari][1])*77.5)))*(1/(sum(1+1+2+(maxage[16]-3)))), 
-             I7579c = (1-exp((-(ari[year == 1950 & acat == "45+", ari][1])*77.5)))*(2/(sum(1+1+2+(maxage[16]-3)))), 
-             I7579d = (1-exp((-(ari[year == 1950 & acat == "45+", ari][1])*77.5)))*((maxage[16]-3)/(sum(1+1+2+(maxage[16]-3)))),
-             S8000 = exp((-(ari[year == 1950 & acat == "45+", ari][1])*85)), 
-             I8000a = (1-exp((-(ari[year == 1950 & acat == "45+", ari][1])*85)))*(1/(sum(1+1+2+(maxage[17]-3)))), 
-             I8000b = (1-exp((-(ari[year == 1950 & acat == "45+", ari][1])*85)))*(1/(sum(1+1+2+(maxage[17]-3)))),
-             I8000c = (1-exp((-(ari[year == 1950 & acat == "45+", ari][1])*85)))*(2/(sum(1+1+2+(maxage[17]-3)))),
-             I8000d = (1-exp((-(ari[year == 1950 & acat == "45+", ari][1])*85)))*((maxage[17]-3)/(sum(1+1+2+(maxage[17]-3)))))
+  state <- c(S0004 = exp((-(ari[year == 1950 & ageARI == "00-14", ari][1])*2.5)), 
+             I0004a = (1-exp((-(ari[year == 1950 & ageARI == "00-14", ari][1])*2.5)))*(1/(sum(1+1+2+(maxage[1]-3)))), 
+             I0004b = (1-exp((-(ari[year == 1950 & ageARI == "00-14", ari][1])*2.5)))*(1/(sum(1+1+2+(maxage[1]-3)))), 
+             I0004c = (1-exp((-(ari[year == 1950 & ageARI == "00-14", ari][1])*2.5)))*(2/(sum(1+1+2+(maxage[1]-3)))), 
+             I0004d = (1-exp((-(ari[year == 1950 & ageARI == "00-14", ari][1])*2.5)))*((maxage[1]-3)/(sum(1+1+2+(maxage[1]-3)))), 
+             S0509 = exp((-(ari[year == 1950 & ageARI == "00-14", ari][1])*7.5)), 
+             I0509a = (1-exp((-(ari[year == 1950 & ageARI == "00-14", ari][1])*7.5)))*(1/(sum(1+1+2+(maxage[2]-3)))), 
+             I0509b = (1-exp((-(ari[year == 1950 & ageARI == "00-14", ari][1])*7.5)))*(1/(sum(1+1+2+(maxage[2]-3)))), 
+             I0509c = (1-exp((-(ari[year == 1950 & ageARI == "00-14", ari][1])*7.5)))*(2/(sum(1+1+2+(maxage[2]-3)))), 
+             I0509d = (1-exp((-(ari[year == 1950 & ageARI == "00-14", ari][1])*7.5)))*((maxage[2]-3)/(sum(1+1+2+(maxage[2]-3)))),
+             S1014 = exp((-(ari[year == 1950 & ageARI == "00-14", ari][1])*12.5)), 
+             I1014a = (1-exp((-(ari[year == 1950 & ageARI == "00-14", ari][1])*12.5)))*(1/(sum(1+1+2+(maxage[3]-3)))), 
+             I1014b = (1-exp((-(ari[year == 1950 & ageARI == "00-14", ari][1])*12.5)))*(1/(sum(1+1+2+(maxage[3]-3)))), 
+             I1014c = (1-exp((-(ari[year == 1950 & ageARI == "00-14", ari][1])*12.5)))*(2/(sum(1+1+2+(maxage[3]-3)))),
+             I1014d = (1-exp((-(ari[year == 1950 & ageARI == "00-14", ari][1])*12.5)))*((maxage[3]-3)/(sum(1+1+2+(maxage[3]-3)))), 
+             S1519 = exp((-(ari[year == 1950 & ageARI == "15-44", ari][1])*17.5)), 
+             I1519a = (1-exp((-(ari[year == 1950 & ageARI == "15-44", ari][1])*17.5)))*(1/(sum(1+1+2+(maxage[4]-3)))), 
+             I1519b = (1-exp((-(ari[year == 1950 & ageARI == "15-44", ari][1])*17.5)))*(1/(sum(1+1+2+(maxage[4]-3)))), 
+             I1519c = (1-exp((-(ari[year == 1950 & ageARI == "15-44", ari][1])*17.5)))*(2/(sum(1+1+2+(maxage[4]-3)))),
+             I1519d = (1-exp((-(ari[year == 1950 & ageARI == "15-44", ari][1])*17.5)))*((maxage[4]-3)/(sum(1+1+2+(maxage[4]-3)))),
+             S2024 = exp((-(ari[year == 1950 & ageARI == "15-44", ari][1])*22.5)), 
+             I2024a = (1-exp((-(ari[year == 1950 & ageARI == "15-44", ari][1])*22.5)))*(1/(sum(1+1+2+(maxage[5]-3)))), 
+             I2024b = (1-exp((-(ari[year == 1950 & ageARI == "15-44", ari][1])*22.5)))*(1/(sum(1+1+2+(maxage[5]-3)))), 
+             I2024c = (1-exp((-(ari[year == 1950 & ageARI == "15-44", ari][1])*22.5)))*(2/(sum(1+1+2+(maxage[5]-3)))),
+             I2024d = (1-exp((-(ari[year == 1950 & ageARI == "15-44", ari][1])*22.5)))*((maxage[5]-3)/(sum(1+1+2+(maxage[5]-3)))), 
+             S2529 = exp((-(ari[year == 1950 & ageARI == "15-44", ari][1])*27.5)), 
+             I2529a = (1-exp((-(ari[year == 1950 & ageARI == "15-44", ari][1])*27.5)))*(1/(sum(1+1+2+(maxage[6]-3)))), 
+             I2529b = (1-exp((-(ari[year == 1950 & ageARI == "15-44", ari][1])*27.5)))*(1/(sum(1+1+2+(maxage[6]-3)))),
+             I2529c = (1-exp((-(ari[year == 1950 & ageARI == "15-44", ari][1])*27.5)))*(2/(sum(1+1+2+(maxage[6]-3)))), 
+             I2529d = (1-exp((-(ari[year == 1950 & ageARI == "15-44", ari][1])*27.5)))*((maxage[6]-3)/(sum(1+1+2+(maxage[6]-3)))),
+             S3034 = exp((-(ari[year == 1950 & ageARI == "15-44", ari][1])*32.5)), 
+             I3034a = (1-exp((-(ari[year == 1950 & ageARI == "15-44", ari][1])*32.5)))*(1/(sum(1+1+2+(maxage[7]-3)))), 
+             I3034b = (1-exp((-(ari[year == 1950 & ageARI == "15-44", ari][1])*32.5)))*(1/(sum(1+1+2+(maxage[7]-3)))), 
+             I3034c = (1-exp((-(ari[year == 1950 & ageARI == "15-44", ari][1])*32.5)))*(2/(sum(1+1+2+(maxage[7]-3)))), 
+             I3034d = (1-exp((-(ari[year == 1950 & ageARI == "15-44", ari][1])*32.5)))*((maxage[7]-3)/(sum(1+1+2+(maxage[7]-3)))), 
+             S3539 = exp((-(ari[year == 1950 & ageARI == "15-44", ari][1])*37.5)), 
+             I3539a = (1-exp((-(ari[year == 1950 & ageARI == "15-44", ari][1])*37.5)))*(1/(sum(1+1+2+(maxage[8]-3)))), 
+             I3539b = (1-exp((-(ari[year == 1950 & ageARI == "15-44", ari][1])*37.5)))*(1/(sum(1+1+2+(maxage[8]-3)))),
+             I3539c = (1-exp((-(ari[year == 1950 & ageARI == "15-44", ari][1])*37.5)))*(2/(sum(1+1+2+(maxage[8]-3)))),
+             I3539d = (1-exp((-(ari[year == 1950 & ageARI == "15-44", ari][1])*37.5)))*((maxage[8]-3)/(sum(1+1+2+(maxage[8]-3)))),
+             S4044 = exp((-(ari[year == 1950 & ageARI == "15-44", ari][1])*42.5)), 
+             I4044a = (1-exp((-(ari[year == 1950 & ageARI == "15-44", ari][1])*42.5)))*(1/(sum(1+1+2+(maxage[9]-3)))), 
+             I4044b = (1-exp((-(ari[year == 1950 & ageARI == "15-44", ari][1])*42.5)))*(1/(sum(1+1+2+(maxage[9]-3)))), 
+             I4044c = (1-exp((-(ari[year == 1950 & ageARI == "15-44", ari][1])*42.5)))*(2/(sum(1+1+2+(maxage[9]-3)))),
+             I4044d = (1-exp((-(ari[year == 1950 & ageARI == "15-44", ari][1])*42.5)))*((maxage[9]-3)/(sum(1+1+2+(maxage[9]-3)))), 
+             S4549 = exp((-(ari[year == 1950 & ageARI == "45+", ari][1])*47.5)), 
+             I4549a = (1-exp((-(ari[year == 1950 & ageARI == "45+", ari][1])*47.5)))*(1/(sum(1+1+2+(maxage[10]-3)))), 
+             I4549b = (1-exp((-(ari[year == 1950 & ageARI == "45+", ari][1])*47.5)))*(1/(sum(1+1+2+(maxage[10]-3)))),
+             I4549c = (1-exp((-(ari[year == 1950 & ageARI == "45+", ari][1])*47.5)))*(2/(sum(1+1+2+(maxage[10]-3)))),
+             I4549d = (1-exp((-(ari[year == 1950 & ageARI == "45+", ari][1])*47.5)))*((maxage[10]-3)/(sum(1+1+2+(maxage[10]-3)))),
+             S5054 = exp((-(ari[year == 1950 & ageARI == "45+", ari][1])*52.5)), 
+             I5054a = (1-exp((-(ari[year == 1950 & ageARI == "45+", ari][1])*52.5)))*(1/(sum(1+1+2+(maxage[11]-3)))), 
+             I5054b = (1-exp((-(ari[year == 1950 & ageARI == "45+", ari][1])*52.5)))*(1/(sum(1+1+2+(maxage[11]-3)))), 
+             I5054c = (1-exp((-(ari[year == 1950 & ageARI == "45+", ari][1])*52.5)))*(2/(sum(1+1+2+(maxage[11]-3)))), 
+             I5054d = (1-exp((-(ari[year == 1950 & ageARI == "45+", ari][1])*52.5)))*((maxage[11]-3)/(sum(1+1+2+(maxage[11]-3)))), 
+             S5559 = exp((-(ari[year == 1950 & ageARI == "45+", ari][1])*57.5)), 
+             I5559a = (1-exp((-(ari[year == 1950 & ageARI == "45+", ari][1])*57.5)))*(1/(sum(1+1+2+(maxage[12]-3)))), 
+             I5559b = (1-exp((-(ari[year == 1950 & ageARI == "45+", ari][1])*57.5)))*(1/(sum(1+1+2+(maxage[12]-3)))), 
+             I5559c = (1-exp((-(ari[year == 1950 & ageARI == "45+", ari][1])*57.5)))*(2/(sum(1+1+2+(maxage[12]-3)))),
+             I5559d = (1-exp((-(ari[year == 1950 & ageARI == "45+", ari][1])*57.5)))*((maxage[12]-3)/(sum(1+1+2+(maxage[12]-3)))),
+             S6064 = exp((-(ari[year == 1950 & ageARI == "45+", ari][1])*62.5)), 
+             I6064a = (1-exp((-(ari[year == 1950 & ageARI == "45+", ari][1])*62.5)))*(1/(sum(1+1+2+(maxage[13]-3)))), 
+             I6064b = (1-exp((-(ari[year == 1950 & ageARI == "45+", ari][1])*62.5)))*(1/(sum(1+1+2+(maxage[13]-3)))),
+             I6064c = (1-exp((-(ari[year == 1950 & ageARI == "45+", ari][1])*62.5)))*(2/(sum(1+1+2+(maxage[13]-3)))),
+             I6064d = (1-exp((-(ari[year == 1950 & ageARI == "45+", ari][1])*62.5)))*((maxage[13]-3)/(sum(1+1+2+(maxage[13]-3)))), 
+             S6569 = exp((-(ari[year == 1950 & ageARI == "45+", ari][1])*67.5)), 
+             I6569a = (1-exp((-(ari[year == 1950 & ageARI == "45+", ari][1])*67.5)))*(1/(sum(1+1+2+(maxage[14]-3)))), 
+             I6569b = (1-exp((-(ari[year == 1950 & ageARI == "45+", ari][1])*67.5)))*(1/(sum(1+1+2+(maxage[14]-3)))),
+             I6569c = (1-exp((-(ari[year == 1950 & ageARI == "45+", ari][1])*67.5)))*(2/(sum(1+1+2+(maxage[14]-3)))),
+             I6569d = (1-exp((-(ari[year == 1950 & ageARI == "45+", ari][1])*67.5)))*((maxage[14]-3)/(sum(1+1+2+(maxage[14]-3)))),
+             S7074 = exp((-(ari[year == 1950 & ageARI == "45+", ari][1])*72.5)), 
+             I7074a = (1-exp((-(ari[year == 1950 & ageARI == "45+", ari][1])*72.5)))*(1/(sum(1+1+2+(maxage[15]-3)))), 
+             I7074b = (1-exp((-(ari[year == 1950 & ageARI == "45+", ari][1])*72.5)))*(1/(sum(1+1+2+(maxage[15]-3)))),
+             I7074c = (1-exp((-(ari[year == 1950 & ageARI == "45+", ari][1])*72.5)))*(2/(sum(1+1+2+(maxage[15]-3)))), 
+             I7074d = (1-exp((-(ari[year == 1950 & ageARI == "45+", ari][1])*72.5)))*((maxage[15]-3)/(sum(1+1+2+(maxage[15]-3)))),
+             S7579 = exp((-(ari[year == 1950 & ageARI == "45+", ari][1])*77.5)), 
+             I7579a = (1-exp((-(ari[year == 1950 & ageARI == "45+", ari][1])*77.5)))*(1/(sum(1+1+2+(maxage[16]-3)))), 
+             I7579b = (1-exp((-(ari[year == 1950 & ageARI == "45+", ari][1])*77.5)))*(1/(sum(1+1+2+(maxage[16]-3)))), 
+             I7579c = (1-exp((-(ari[year == 1950 & ageARI == "45+", ari][1])*77.5)))*(2/(sum(1+1+2+(maxage[16]-3)))), 
+             I7579d = (1-exp((-(ari[year == 1950 & ageARI == "45+", ari][1])*77.5)))*((maxage[16]-3)/(sum(1+1+2+(maxage[16]-3)))),
+             S8000 = exp((-(ari[year == 1950 & ageARI == "45+", ari][1])*85)), 
+             I8000a = (1-exp((-(ari[year == 1950 & ageARI == "45+", ari][1])*85)))*(1/(sum(1+1+2+(maxage[17]-3)))), 
+             I8000b = (1-exp((-(ari[year == 1950 & ageARI == "45+", ari][1])*85)))*(1/(sum(1+1+2+(maxage[17]-3)))),
+             I8000c = (1-exp((-(ari[year == 1950 & ageARI == "45+", ari][1])*85)))*(2/(sum(1+1+2+(maxage[17]-3)))),
+             I8000d = (1-exp((-(ari[year == 1950 & ageARI == "45+", ari][1])*85)))*((maxage[17]-3)/(sum(1+1+2+(maxage[17]-3)))))
   
   output_raw <- ode(y = state, times = times, func = sis, 
                     parms = parms, method = "lsoda")
@@ -409,10 +399,4 @@ for (c in 1:(length(countries))){
 mtb <- do.call("rbind",list_df)
 toc()
 
-# Median run - MtbInf
-export(mtb,here("data","mtb","mMtb_IHME_rev_mix_pop_sc.Rdata")) # IHME - Reversion - Mix - Self-clearance
-# export(mtb,here("data","mtb","mMtb_IHME_rev_mix_pop_nosc.Rdata")) # IHME - Reversion - Mix - No self-clearance
-# export(mtb,here("data","mtb","mMtb_IHME_rev_nomix_pop_nosc.Rdata")) # IHME - Reversion - No mix - No self-clearance
-# export(mtb,here("data","mtb","mMtb_IHME_norev_mix_pop_nosc.Rdata")) # IHME - No reversion - Mix - No self-clearance
-# export(mtb,here("data","mtb","mMtb_IHME_norev_nomix_pop_nosc.Rdata")) # IHME - No reversion - No mix - No self-clearance
-# export(mtb,here("data","mtb","mMtb_WHO_norev_nomix_pop_nosc.Rdata")) # WHO - No reversion - No mix - No self-clearance
+export(mtb, here("data","mtb","mMtb_rev_mix_pop_sc.Rdata"))
