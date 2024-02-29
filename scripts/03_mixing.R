@@ -158,6 +158,7 @@ F3 <- ggplot() +
 
 # 5. Age-adjusted ARIs
 ARI <- as.data.table(import(here("data","gp","GP_rev.Rdata")))
+ARI <- as.data.table(import(here("data","gp","GPruns_rev.Rdata")))
 
 ARI <- ARI %>% 
   left_join(WHOkey, by = 'iso3') %>% 
@@ -174,10 +175,11 @@ ARI <- ARI %>%
   filter(!is.na(relari)) %>% 
   rbind(ARIna) %>% 
   mutate(ari = exp(lari + (log(relari)))) %>% 
-  select(year, iso3, reg, ageARI, ari) %>% 
+  select(year, iso3, reg, starts_with("rep"), ageARI, ari) %>% 
   arrange(iso3, year)
 rm(ARIna)
 
 export(ARI, here("data","ari","mARI_rev_mix.Rdata")) # Reversion - Mix
+export(ARI, here("data","ari","ARI_rev_mix.Rdata")) # Reversion - Mix
 
 rm(list=ls())

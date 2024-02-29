@@ -83,13 +83,15 @@ WPP <- WPP %>%
 rm(WPPb, WPPd)
 
 ARI <- import(here("data","ari","mARI_rev_mix.Rdata"))
+ARI <- import(here("data","ari","ARI_rev_mix.Rdata"))
 
 ARI <- ARI %>%
-  left_join(WPP, by = c("iso3", "year", "ageARI")) %>% 
+  left_join(WPP, by = c("iso3", "year", "ageARI"), relationship = 'many-to-many') %>% 
   arrange(iso3, year, ageWPP, ageARI) %>% 
   filter(!is.na(ageWPP))
 rm(WPP)
 
 export(ARI, here("data","ari","mARI_rev_mix_pop.Rdata"))
+export(ARI, here("data","ari","ARI_rev_mix_pop.Rdata"))
 
 rm(list=ls())
