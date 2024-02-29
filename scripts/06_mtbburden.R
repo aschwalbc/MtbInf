@@ -39,6 +39,11 @@ MTB <- MTB %>%
   select(iso3, year, St, It, rIt, Nt) %>% 
   mutate(pI = It / Nt, prI = rIt / Nt, rI = prI / pI)
 
+gMTB <- MTB %>% 
+  group_by(year) %>% 
+  summarise(St = sum(St), It = sum(It), rIt = sum(rIt), Nt = sum(Nt)) %>% 
+  mutate(pI = It / Nt, prI = rIt / Nt, rI = prI / pI)
+
 iso <- unique(MTB$iso3)
 
 pdf(here("plots","mtb","propInf.pdf"), height = 6, width = 10)
@@ -59,15 +64,3 @@ for(i in iso) {
   print(p)
 }
 dev.off()
-
-
-  scale_x_continuous(expand=c(0, 0), breaks = seq(1950, 2050, 25)) +
-  scale_y_continuous(expand=c(0, 0), breaks = seq(-10, 0, 2.5)) +
-  scale_colour_manual(values = c("prev" = "#CE1126", "surv" = "#003884")) +
-  scale_shape_manual(values = c("prev" = 16, "surv" = 17)) +
-  coord_cartesian(ylim = c(-10, 0), xlim = c(1950, 2050)) +
-
-gMTB <- MTB %>% 
-  group_by(year) %>% 
-  summarise(St = sum(St), It = sum(It), rIt = sum(rIt), Nt = sum(Nt)) %>% 
-  mutate(pI = It / Nt * 1e2, prI = rIt / Nt * 1e2, rI = prIt / pI)
