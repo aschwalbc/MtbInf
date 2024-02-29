@@ -159,14 +159,14 @@ sis <- function(times, state, parms) {
   S7579  <- state["S7579"]; I7579a  <- state["I7579a"]; I7579b  <- state["I7579b"]; I7579c  <- state["I7579c"]; I7579d  <- state["I7579d"]
   S8000  <- state["S8000"]; I8000a  <- state["I8000a"]; I8000b  <- state["I8000b"]; I8000c  <- state["I8000c"]; I8000d  <- state["I8000d"]
   
-  gamma_a <- 1.83 # Self-clearance rate (A) [Horton et al. 2023]
-  gamma_b <- 1.83 # Self-clearance rate (B) [Horton et al. 2023]
-  gamma_c <- 0.0 # Self-clearance rate (C)
+  gamma_a <- 1.13 # Self-clearance rate (A) [Horton et al. 2023]
+  gamma_b <- 1.13 # Self-clearance rate (B) [Horton et al. 2023]
+  gamma_c <- 0.2 # Self-clearance rate (C)
   gamma_d <- 0.0 # Self-clearance rate (D)
   alpha <- 1/5 # Age transition
-  kappa_ab <- 1 # Transition between infection years (A-B) # REVIEW
-  kappa_bc <- 1 # Transition between infection years (B-C) # REVIEW
-  kappa_cd <- 1 # Transition between infection years (C-D) # REVIEW
+  kappa_ab <- 1 # Transition between infection years (A-B)
+  kappa_bc <- 1 # Transition between infection years (B-C)
+  kappa_cd <- 1/8 # Transition between infection years (C-D)
   
   par <- names(parms)
   par <- par[-c(1,2)]
@@ -294,8 +294,7 @@ list_df <- list()
 
 tic()
 for (c in 1:(length(isos))){
-  iso <- 'IND'
-  #iso <- isos[c]
+  iso <- isos[c]
   print(iso)
   
   parms <- as.data.table(parameters) %>% filter(iso3 == iso)
