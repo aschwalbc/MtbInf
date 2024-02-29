@@ -1,14 +1,2 @@
-ARI_IHME_norev_mix.Rdata
-ARI_IHME_norev_mixreg.Rdata
-ARI_IHME_norev_nomix.Rdata
-ARI_IHME_rev_mix.Rdata
-ARI_IHME_rev_mixreg.Rdata
-ARI_IHME_rev_nomix.Rdata
-ARI_WHO_norev_mix.Rdata
-ARI_WHO_norev_mixreg.Rdata
-ARI_WHO_norev_nomix.Rdata
-ARI_IHME_norev_mix_pop.Rdata
-ARI_IHME_norev_nomix_pop.Rdata
-ARI_IHME_rev_mix_pop.Rdata
-ARI_IHME_rev_nomix_pop.Rdata
-ARI_WHO_norev_nomix_pop.Rdata
+ARI_rev_mix.Rdata
+ARI_rev_mix_pop.Rdata
