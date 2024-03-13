@@ -10,17 +10,32 @@ library(tidyverse)
 library(data.table)
 options(scipen = 999)
 
+# 0. Pre-processing curation ==========
+# 0.1 Filtering countries with population size <500k in 2022
+WPP <- import(here("data","sources","pop","WPP_Pop_1950-2100.csv"))
+
+WPP <- WPP %>% # Population data
+  select(iso3 = ISO3_code, year = Time, ageWPP = AgeGrp, pop = PopTotal) %>%
+  mutate(iso3 = na_if(iso3, "")) %>% 
+  filter(!is.na(iso3)) %>%
+  filter(year == 2022) %>% 
+  group_by(iso3, year) %>% 
+  summarise(pop = sum(pop) * 1e3) %>% 
+  filter(pop >= 500000) %>% 
+  pull(unique(iso3)) # 175 countries
+
 # 1. Indirect ARI estimates ==========
 # 1.1 WHO TB prevalence/incidence ratio
 WHOr <- as.data.table(import(here("data","sources","who","WHOest_1990-2014.csv")))
 
 WHOr <- WHOr %>% 
   select(iso3, year, g_whoregion, starts_with('e_prev_num'), starts_with('e_inc_num')) %>% 
+  filter(year >= 2000) %>% 
+  filter(iso3 %in% WPP) %>% 
   mutate(previnc = e_prev_num / e_inc_num, previnc_lo = e_prev_num_lo / e_inc_num_lo, previnc_hi = e_prev_num_hi / e_inc_num_hi) %>% 
   select(iso3, year, g_whoregion, previnc, previnc_lo, previnc_hi) %>% 
-  group_by(iso3) %>% 
-  summarise(previnc = mean(previnc)) %>% 
-  mutate(previnc = ifelse(is.finite(previnc), previnc, 1))
+  group_by(iso3, g_whoregion) %>% 
+  summarise(previnc = mean(previnc, na.rm = TRUE))
 
 # 1.2 WHO TB incidence estimates
 WHO <- as.data.table(import(here("data","sources","who","WHOest_2000-2022.csv")))
@@ -29,14 +44,12 @@ WHO <- WHO %>%
   select(iso3, year, e_pop_num, starts_with('e_inc_num'), starts_with('c_cdr'), starts_with('e_tbhiv_prct')) %>% 
   rename(pop = e_pop_num, inc = e_inc_num, inc_lo = e_inc_num_lo, inc_hi = e_inc_num_hi,
          cdr = c_cdr, cdr_lo = c_cdr_lo, cdr_hi = c_cdr_hi, tbhiv = e_tbhiv_prct, tbhiv_lo = e_tbhiv_prct_lo, tbhiv_hi = e_tbhiv_prct_hi) %>%
+  filter(iso3 %in% WPP) %>% 
   left_join(WHOr, by = 'iso3') %>% 
   mutate(prev = round(((inc * previnc) / pop) * 1e5, 2),
          prev_lo = round(((inc_lo * previnc) / pop) * 1e5, 2),
          prev_hi = round(((inc_hi * previnc) / pop) * 1e5, 2)) %>% 
-  select(iso3, year, starts_with('prev'), starts_with('inc'), starts_with('cdr'), starts_with('tbhiv')) %>% 
-  group_by(iso3) %>% 
-  filter(!any(is.na(prev))) %>% 
-  ungroup() %>% 
+  select(iso3, year, prev, prev_lo, prev_hi, starts_with('inc'), starts_with('cdr'), starts_with('tbhiv')) %>% 
   mutate(iso3 = factor(iso3)) %>% 
   arrange(iso3, year) %>% 
   as.data.table()
@@ -52,10 +65,10 @@ vstb <- (exp(sig^2) - 1) * exp(2 * mu + sig^2)
 rm(mu, sig)
 
 # 1.3.2 Reversion adjustment
-rev <- 3.5 # True ARI = 2-5x higher, 3.5 for average (Schwalb AJE 2023)
+rev <- 2.9 # True ARI = 2-5x higher (Schwalb AJE 2023)
 revE <- 1.5 # Increasing variance estimates by 50%
-rev <- 1 # No reversion adjustment
-revE <- 1 # No reversion adjustment
+# rev <- 1 # No reversion adjustment
+# revE <- 1 # No reversion adjustment
 
 # 1.3.3 HIV in TB
 HIV <- WHO %>% 
@@ -101,19 +114,41 @@ HIV <- HIV %>%
 rm(mf, vf)
 
 # 1.3.4 Childhood TB
-KID <- as.data.table(import(here("data","sources","others","TBinc_kids.csv")))
+WPPk <- as.data.table(import(here("data","sources","pop","WPP_Pop_1950-2100.csv")))
+KIDinc <- as.data.table(import(here("data","sources","others","TB_burden_age_sex.csv")))
 pKID <- as.data.table(import(here("data","sources","others","TBinc_kids_prop.csv"))) # Dodd et al. Lancet GH 2014
 
+WPPk <- WPPk %>% # Population <15yo in 2022
+  select(iso3 = ISO3_code, year = Time, ageWPP = AgeGrp, pop = PopTotal) %>%
+  mutate(iso3 = na_if(iso3, "")) %>% 
+  filter(!is.na(iso3)) %>% 
+  filter(iso3 %in% WPP) %>% 
+  filter(year == 2022) %>% 
+  filter(ageWPP %in% c('0-4', '5-9', '10-14')) %>% 
+  group_by(iso3) %>% 
+  summarise(k_pop = sum(pop) * 1e3)
+
+KIDinc <- KIDinc %>% 
+  select(iso3, agegp = age_group, sex, risk = risk_factor, k_inc = best, lo, hi) %>% 
+  filter(iso3 %in% WPP) %>% 
+  filter(agegp == '0-14') %>% 
+  filter(sex == 'a') %>% 
+  filter(risk == 'all') %>% 
+  within(rm(agegp, sex, risk)) %>% 
+  mutate(k_inc_sd = (hi - lo) / (2 * 1.96)) %>% 
+  select(iso3, k_inc, k_inc_sd) %>% 
+  left_join(WPPk, by = 'iso3')
+rm(WPPk)
+  
 # Smear-positivity by age (Kunkel et al. BMC ID 2016)
 YK <- 0.5e-2; vYK <- (1.9 * 1e-2 / 3.92)^2 # Children aged 0-4 (YK) = 0.5% (0.0 - 1.9)
 OK <- 14e-2; vOK <- ((19.4 - 8.9) * 1e-2 / 3.92)^2 # Children aged 5-14 (OK) = 14.0% (8.9 - 19.4)
 A <- 0.52; vA <- ((0.64 - 0.4) / 3.92)^2 # Adults (A) = 52.0% (40.0 - 64.0)
 
 KID <- WHO %>% 
-  filter(year == 2014) %>% 
+  filter(year == 2022) %>% 
   select(iso3, inc, inc_lo, inc_hi) %>% 
-  left_join(KID, by = 'iso3') %>% 
-  rename(k_inc = inc.num, k_inc_sd = inc.num.sd, k_pop = e.pop.014) %>% 
+  left_join(KIDinc, by = 'iso3') %>% 
   mutate(pk = k_inc / inc) %>% # Proportion of TB in children
   mutate(vpk = pk^2 * (k_inc_sd^2 / k_inc^2 + ((inc_hi - inc_lo) / 3.92)^2 / inc^2)) %>% 
   mutate(pk = if_else(pk > 1, 0.1, pk), # Max extreme values to 10%
@@ -130,7 +165,7 @@ KID <- WHO %>%
   mutate(iso3 = factor(iso3)) %>% 
   arrange(iso3) %>% 
   as.data.table()
-rm(YK, vYK, OK, vOK, A, vA, pKID)
+rm(YK, vYK, OK, vOK, A, vA, pKID, KIDinc)
 
 # 1.4 ARI estimation
 GTB <- WHO %>% 
@@ -160,6 +195,7 @@ rm(stb, vstb, GTB)
 CAU <- as.data.table(import(here("data","sources","surveys","ari_cauthen.csv")))
 
 CAU <- CAU %>% 
+  filter(iso3 %in% WPP) %>% 
   mutate(ari = ari * 1e-2,
          age = {start <- regexpr('\\(', age); stop <- regexpr('\\)', age)
          as.numeric(substr(as.character(age), start = start + 1, stop = stop - 1))}) %>% 
@@ -178,6 +214,7 @@ CAU <- CAU %>%
 REV <- as.data.table(import(here("data","sources","surveys","ari_sysrev.csv")))
 
 REV <- REV %>% 
+  filter(iso3 %in% WPP) %>% 
   mutate(ari = ari * 1e-2) %>%
   mutate(var = ari / (mage * n)) %>% 
   mutate(var = if_else(!is.na(ari_hi), (1.96e-2 * (ari_hi - ari_lo))^2, ari / (mage * n))) %>% 
@@ -190,7 +227,7 @@ REV <- REV %>%
   mutate(iso3 = factor(iso3)) %>% 
   arrange(iso3, year) %>% 
   as.data.table()
-rm(rev, revE)
+rm(rev, revE, WPP)
 
 # 3. ARI database ==========
 ARI <- ARI %>% 
@@ -199,4 +236,4 @@ ARI <- ARI %>%
 rm(CAU, REV)
 
 export(ARI, here("data","ari","ARI_rev.Rdata"))
-export(ARI, here("data","ari","ARI_norev.Rdata"))
+# export(ARI, here("data","ari","ARI_norev.Rdata"))
