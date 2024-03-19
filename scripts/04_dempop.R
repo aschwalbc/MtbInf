@@ -7,6 +7,7 @@ library(data.table)
 library(rio)
 library(here)
 library(tidyverse)
+library(fst)
 
 # 1. Demographic data ==========
 # 1.1 Population
@@ -16,7 +17,7 @@ WPP <- WPP %>% # Population data
   select(iso3 = ISO3_code, year = Time, ageWPP = AgeGrp, pop = PopTotal) %>%
   mutate(iso3 = na_if(iso3, "")) %>% 
   filter(!is.na(iso3)) %>%
-  filter(year <= 2050) %>%
+  filter(year <= 2050) %>% 
   mutate(ageWPP = case_when(ageWPP == "0-4" ~ "00-04", ageWPP == "5-9" ~ "05-09",
     ageWPP %in% c('80-84','85-89','90-94','95-99','100+') ~ '80+', TRUE ~ ageWPP)) %>%
   group_by(iso3, year, ageWPP) %>% 
@@ -83,15 +84,15 @@ WPP <- WPP %>%
 rm(WPPb, WPPd)
 
 ARI <- import(here("data","ari","mARI_rev_mix.Rdata"))
-ARI <- import(here("data","ari","ARI_rev_mix.Rdata"))
+# ARI <- import(here("data","ari","ARI_rev_mix.Rdata"))
 
 ARI <- ARI %>%
   left_join(WPP, by = c("iso3", "year", "ageARI"), relationship = 'many-to-many') %>% 
   arrange(iso3, year, ageWPP, ageARI) %>% 
-  filter(!is.na(ageWPP))
+  filter(!is.na(ageWPP)) 
 rm(WPP)
 
 export(ARI, here("data","ari","mARI_rev_mix_pop.Rdata"))
-export(ARI, here("data","ari","ARI_rev_mix_pop.Rdata"))
+# write.fst(ARI, here("data","ari","ARI_rev_mix_pop.fst"))
 
 rm(list=ls())

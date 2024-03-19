@@ -14,10 +14,10 @@ library(Matrix)
 
 # 1. Data ==========
 ARI <- as.data.table(import(here("data","ari","ARI_rev.Rdata"))) # Reversion
-ARI <- as.data.table(import(here("data","ari","ARI_norev.Rdata"))) # No reversion
+# ARI <- as.data.table(import(here("data","ari","ARI_norev.Rdata"))) # No reversion
 
 iso <- unique(as.character(ARI$iso3)) # List unique ISO codes
-interp <- 1 # CHANGE HERE: Constant (0) or linear (1)
+interp <- 0 # CHANGE HERE: Constant (0) or linear (1)
 
 # 2. Functions ==========
 # 2.1 Function 01
@@ -197,7 +197,7 @@ ARI <- as.data.table(import(here("data","ari","ARI_rev.Rdata")))
 
 iso <- sort(unique(as.character(ARI$iso3)))
 
-pdf(here("plots","gp","logARI.pdf"), height = 6, width = 10)
+pdf(here("plots","02_gpreg","logARI.pdf"), height = 6, width = 10)
 for(i in 1:length(iso)){
   print(iso[i])
   ari <- ARI %>%
@@ -220,7 +220,7 @@ for(i in 1:length(iso)){
 }
 dev.off()
 
-pdf(here("plots","gp","ARI.pdf"), height = 6, width = 10)
+pdf(here("plots","02_gpreg","ARI.pdf"), height = 6, width = 10)
 for(i in 1:length(iso)){
   print(iso[i])
   ari <- ARI %>%
