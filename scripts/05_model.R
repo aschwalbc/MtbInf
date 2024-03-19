@@ -407,9 +407,7 @@ for (c in 1:(length(isos))){
 mtb <- do.call("rbind",list_df)
 toc()
 
-export(mtb, here("data","mtb","mMtb_rev_mix_pop_sc.Rdata"))
-
-mtbi <- mtb %>% 
+mtbi <- mtb %>% # Check, each age group sum should be 1
   mutate(N0004 = rowSums(select(., contains('0004')), na.rm = TRUE),
          N0509 = rowSums(select(., contains('0509')), na.rm = TRUE),
          N1014 = rowSums(select(., contains('1014')), na.rm = TRUE),
@@ -427,4 +425,7 @@ mtbi <- mtb %>%
          N7074 = rowSums(select(., contains('7074')), na.rm = TRUE),
          N7579 = rowSums(select(., contains('7579')), na.rm = TRUE),
          N8000 = rowSums(select(., contains('8000')), na.rm = TRUE))
+
+export(mtb, here("data","mtb","mMtb_rev_mix_pop_sc.Rdata"))
+
          
