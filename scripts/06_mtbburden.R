@@ -39,6 +39,28 @@ MTB <- MTB %>%
   select(iso3, year, St, It, rIt, Nt) %>% 
   mutate(pI = It / Nt, prI = rIt / Nt, rI = prI / pI)
 
+MTBage <- MTB %>% 
+  mutate(year = time + 1950) %>% 
+  left_join(POP, by = c("iso3", "year")) %>% 
+  mutate(across(matches("^S\\d{4}$"), ~ . * get(paste0("N", substr(cur_column(), 2, 5)))),
+         across(matches("^I\\d{4}[a-z]?$"), ~ . * get(paste0("N", substr(cur_column(), 2, 5))))) %>% 
+  mutate(St = rowSums(across(matches("^S\\d{4}$")))) %>% 
+  mutate(It = rowSums(across(matches("^I\\d{4}[a-d]?$")))) %>% 
+  mutate(rIt = rowSums(across(matches("^I\\d{4}[a-b]$")))) %>%
+  mutate(Nt = rowSums(across(matches("^N\\d{4}$")))) %>% 
+  mutate(St70 = rowSums(across(c("S7074", "S7579", "S8000")))) %>%
+  mutate(It70 = rowSums(across(c(str_c("I7074", c("a", "b", "c", "d")), 
+                                 str_c("I7579", c("a", "b", "c", "d")), 
+                                 str_c("I8000", c("a", "b", "c", "d")))))) %>%
+  mutate(rIt70 = rowSums(across(c(str_c("I7074", c("a", "b")), 
+                                  str_c("I7579", c("a", "b")), 
+                                  str_c("I8000", c("a", "b")))))) %>%
+  mutate(Nt70 = rowSums(across(c("N7074", "N7579", "N8000")))) %>%
+  select(iso3, year, St, It, rIt, Nt, St70, It70, rIt70, Nt70) %>% 
+  mutate(pI = It / Nt, prI = rIt / Nt, rI = prI / pI, 
+         pI70 = It70 / Nt70, prI70 = rIt70 / Nt70, rI70 = prI70 / pI70) %>% 
+  filter(year == 2022 & iso3 == 'JPN')
+
 gMTB <- MTB %>% 
   group_by(year) %>% 
   summarise(St = sum(St), It = sum(It), rIt = sum(rIt), Nt = sum(Nt)) %>% 
