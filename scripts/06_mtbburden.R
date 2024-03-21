@@ -132,7 +132,7 @@ MTBglb <- MTBiso %>%
 
 iso <- unique(MTB$iso3)
 
-pdf(here("plots","mtb","propInf.pdf"), height = 6, width = 10)
+pdf(here("plots","mtb","Inf_iso.pdf"), height = 6, width = 10)
 for(i in iso) {
   mtbdb <- filter(MTB, iso3 == i)
   val2019 <- filter(mtbdb, year == 2019)
@@ -153,7 +153,6 @@ dev.off()
 
 pdf(here("plots","mtb","Inf_agegp.pdf"), height = 6, width = 10)
 for(i in iso) {
-  i = 'JPN'
   mtbdb <- filter(MTBage_num, iso3 == i, year == 2022)
   p <- ggplot() +
     geom_col(mtbdb, mapping = aes(x = agegp, y = val, fill = var), position = "stack") +
