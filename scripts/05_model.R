@@ -163,7 +163,7 @@ sis <- function(times, state, parms) {
   gamma_b <- 1.26 # Self-clearance rate (B)
   gamma_c <- 0.5 # Self-clearance rate (C)
   gamma_d <- 0.0 # Self-clearance rate (D)
-  alpha <- 1/5 # Age transition
+  alpha <- 0 # Age transition
   kappa_ab <- 1 # Transition between infection years (A-B)
   kappa_bc <- 1 # Transition between infection years (B-C)
   kappa_cd <- 1/8 # Transition between infection years (C-D)
