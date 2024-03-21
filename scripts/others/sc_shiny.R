@@ -23,7 +23,7 @@ sc_model <- function(times, state, parms) {
 }
 
 # 2. Model prep ==========
-times <- seq(from = 0, to = 50, by = 1)
+times <- seq(from = 0, to = 35, by = 1)
 
 state <- c(I = 1000, S = 0)
 
@@ -37,9 +37,9 @@ results <- as.data.frame(ode_results) %>%
 # 3. Plot ==========
 ggplot(results, aes(x = time, y = pS)) +
   geom_line() +
-  geom_segment(aes(x = 0, xend = 50, y = 0.9, yend = 0.9), colour = "grey", linetype = 2) +
-  geom_segment(aes(x = 0, xend = 50, y = 0.95, yend = 0.95), colour = "grey", linetype = 2) +
-  scale_x_continuous(breaks = seq(0, 50, 2)) +  
+  geom_segment(aes(x = 0, xend = 35, y = 0.9, yend = 0.9), colour = "grey", linetype = 2) +
+  geom_segment(aes(x = 0, xend = 35, y = 0.95, yend = 0.95), colour = "grey", linetype = 2) +
+  scale_x_continuous(breaks = seq(0, 35, 2)) +  
   scale_y_continuous(labels = scales::percent) +
   coord_cartesian(ylim = c(0, 1)) +
   labs(x = "Time (years)", y = "Population self-cleared (%)") +
@@ -61,7 +61,7 @@ ui <- fluidPage(
 
 server <- function(input, output) {
   
-  times <- seq(from = 0, to = 50, by = 1)
+  times <- seq(from = 0, to = 35, by = 1)
   
   state <- c(I = 1000, S = 0)
   
@@ -80,14 +80,14 @@ server <- function(input, output) {
     max_pS_value <- max(results$pS)
     
     specific_values <- results %>%
-      filter(time %in% c(1, 2, 10, 40)) %>%
+      filter(time %in% c(1, 2, 10, 30)) %>%
       mutate(label = sprintf("%.1f%%", pS * 100)) 
     
     ggplot(results, aes(x = time, y = pS)) +
-      geom_segment(aes(x = 0, xend = 50, y = 0.9, yend = 0.9), colour = "grey", linetype = 2) +
-      geom_segment(aes(x = 0, xend = 50, y = 0.95, yend = 0.95), colour = "grey", linetype = 2) +
+      geom_segment(aes(x = 0, xend = 35, y = 0.9, yend = 0.9), colour = "grey", linetype = 2) +
+      geom_segment(aes(x = 0, xend = 35, y = 0.95, yend = 0.95), colour = "grey", linetype = 2) +
       geom_line() +
-      scale_x_continuous(breaks = seq(0, 50, 2)) +
+      scale_x_continuous(breaks = seq(0, 35, 2)) +
       scale_y_continuous(labels = scales::percent) +
       coord_cartesian(ylim = c(0, max_pS_value * 1.1)) +
       labs(x = "Time (years)", y = "Population self-cleared (%)") +
