@@ -159,18 +159,18 @@ sis <- function(times, state, parms) {
   S7579  <- state["S7579"]; I7579a  <- state["I7579a"]; I7579b  <- state["I7579b"]; I7579c  <- state["I7579c"]; I7579d  <- state["I7579d"]
   S8000  <- state["S8000"]; I8000a  <- state["I8000a"]; I8000b  <- state["I8000b"]; I8000c  <- state["I8000c"]; I8000d  <- state["I8000d"]
   
-  gamma_a <- 1.26 # Self-clearance rate (A)
-  gamma_b <- 1.26 # Self-clearance rate (B)
-  gamma_c <- 0.5 # Self-clearance rate (C)
-  gamma_d <- 0.0 # Self-clearance rate (D)
+  gamma_a <- 1.650 # Self-clearance rate Y1 [1.586-1.728]
+  gamma_b <- 0.873 # Self-clearance rate Y2 [0.788-0.950]
+  gamma_c <- 0.134 # Self-clearance rate Y3-9 [0.119-0.148]
+  gamma_d <- 0.121 # Self-clearance rate Y10+ [0.073-0.165]
   alpha <- 0 # Age transition
-  kappa_ab <- 1 # Transition between infection years (A-B)
-  kappa_bc <- 1 # Transition between infection years (B-C)
-  kappa_cd <- 1/8 # Transition between infection years (C-D)
-  pi_a <- 0 # Reinfection (A) 
-  pi_b <- 0 # Reinfection (B)
-  pi_c <- 0.21 # Reinfection (C)
-  pi_d <- 0.21 # Reinfection (D)
+  kappa_ab <- 1 # Transition between infection years Y1 -> Y2
+  kappa_bc <- 1 # Transition between infection years Y2 -> Y3-9
+  kappa_cd <- 1/8 # Transition between infection years Y3-9 -> Y10+
+  pi_a <- 0 # Reinfection Y1 
+  pi_b <- 0 # Reinfection Y2
+  pi_c <- 0.21 # Reinfection Y3-9 [0.14-0.30] 
+  pi_d <- 0.21 # Reinfection Y10+ [0.14-0.30]
   
   par <- names(parms)
   par <- par[-c(1,2)]
@@ -313,9 +313,9 @@ for (c in 1:(length(isos))){
   maxage <- c(5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,90)
   
   # Proportion viable (i.e. not self-cleared or recovered) 
-  viapr_a <- 1 - 0.809 # Year 1
-  viapr_b <- 1 - 0.919 # Year 2
-  viapr_c <- 1 - 0.972 # Year 10
+  viapr_a <- 1 - 0.809 # Y1 [0.801-0.817]
+  viapr_b <- 1 - 0.919 # Y2 [0.914-0.925]
+  viapr_c <- 1 - 0.972 # Y10 [0.969-0.975]
   
   # Initial states
   state <- c(S0004 = exp(-ARI0014*2.5), 
@@ -413,30 +413,6 @@ for (c in 1:(length(isos))){
 
 mtb <- do.call("rbind",list_df)
 toc()
-
-# Initial states check
-codes <- gsub("[^0-9]", "", names(state))
-summed_values <- tapply(state, codes, sum)
-print(summed_values)
-
-mtbi <- mtb %>% # Check, each age group sum should be 1
-  mutate(N0004 = rowSums(select(., contains('0004')), na.rm = TRUE),
-         N0509 = rowSums(select(., contains('0509')), na.rm = TRUE),
-         N1014 = rowSums(select(., contains('1014')), na.rm = TRUE),
-         N1519 = rowSums(select(., contains('1519')), na.rm = TRUE),
-         N2024 = rowSums(select(., contains('2024')), na.rm = TRUE),      
-         N2529 = rowSums(select(., contains('2529')), na.rm = TRUE),
-         N3034 = rowSums(select(., contains('3034')), na.rm = TRUE),
-         N3539 = rowSums(select(., contains('3539')), na.rm = TRUE),
-         N4044 = rowSums(select(., contains('4044')), na.rm = TRUE),
-         N4549 = rowSums(select(., contains('4549')), na.rm = TRUE),
-         N5054 = rowSums(select(., contains('5054')), na.rm = TRUE),
-         N5559 = rowSums(select(., contains('5559')), na.rm = TRUE),
-         N6064 = rowSums(select(., contains('6064')), na.rm = TRUE),
-         N6569 = rowSums(select(., contains('6569')), na.rm = TRUE),
-         N7074 = rowSums(select(., contains('7074')), na.rm = TRUE),
-         N7579 = rowSums(select(., contains('7579')), na.rm = TRUE),
-         N8000 = rowSums(select(., contains('8000')), na.rm = TRUE))
 
 export(mtb, here("data","mtb","mMtb_rev_mix_pop_sc.Rdata"))
 
