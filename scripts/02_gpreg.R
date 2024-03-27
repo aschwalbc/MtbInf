@@ -17,7 +17,7 @@ ARI <- as.data.table(import(here("data","ari","ARI_rev.Rdata"))) # Reversion
 # ARI <- as.data.table(import(here("data","ari","ARI_norev.Rdata"))) # No reversion
 
 iso <- unique(as.character(ARI$iso3)) # List unique ISO codes
-interp <- 0 # CHANGE HERE: Constant (0) or linear (1)
+interp <- 1 # CHANGE HERE: Constant (0) or linear (1)
 
 # 2. Functions ==========
 # 2.1 Function 01
@@ -185,8 +185,8 @@ save(erw_full, file = here("data","gp","GP_rev.Rdata"))
 save(runsdf_full,file = here("data","gp","GPruns_rev.Rdata"))
 
 # No reversion": Save output
-save(erw_full, file = here("data","gp","GP_norev.Rdata"))
-save(runsdf_full,file = here("data","gp","GPruns_norev.Rdata"))
+# save(erw_full, file = here("data","gp","GP_norev.Rdata"))
+# save(runsdf_full,file = here("data","gp","GPruns_norev.Rdata"))
 
 rm(list = ls())
 detach(package:MASS, unload = TRUE) # Detach due to issues with tidyverse "select" 

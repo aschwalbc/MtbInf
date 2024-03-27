@@ -154,7 +154,7 @@ F3 <- ggplot() +
   geom_hline(yintercept = 1, col = 2) +
   xlab('Age') +
   ylab('Relative ARI') +
-  ggtitle('Relative ARI implied by mixing')
+  theme_bw()
 
 # 5. Age-adjusted ARIs
 ARI <- as.data.table(import(here("data","gp","GP_rev.Rdata")))
