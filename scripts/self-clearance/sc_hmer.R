@@ -81,7 +81,7 @@ targets <- list(
   pSC1 = c(0.801, 0.817),
   pSC2 = c(0.914, 0.925),
   pSC10 = c(0.969, 0.975),
-  pSC20 = c(0.985, 0.995))
+  pSC50 = c(0.985, 0.995))
 
 targetsdb <- as.data.frame(t(as.data.frame(targets))) # Create dataframe with fitting targets
 targetsdb$var <- substr(rownames(targetsdb),1,3) # Create variable classification
@@ -137,7 +137,7 @@ rm(ini_LHS_train, ini_LHS_val, ini_LHS) # Clean objects
 pb <- progress_bar$new(format = "[:bar] :percent :eta", total = nrow(ini_pts))
 tmp <- list()
 for (i in seq_len(nrow(ini_pts))) {
-  res <- t(apply(ini_pts[i,], 1, hmer_res, c(1, 2, 10, 20), 'pSC'))
+  res <- t(apply(ini_pts[i,], 1, hmer_res, c(1, 2, 10, 50), 'pSC'))
   tmp[[i]] <- data.frame(res)[, names(targets)]
   pb$tick()  # Advance the progress bar
 }
@@ -181,13 +181,13 @@ invalid_bad[[1]] <- validation_diagnostics(ems[[1]], validation = wave_val[[1]],
 non_imp_pts[[1]] <- generate_new_design(ems[[1]], (10*length(ranges))*2, targets, verbose = TRUE) # Generate new points
 
 # 3.4 HMER loop runs
-for(i in 2:100) {
+for(i in 721:725) {
   w <- i # Update wave run
   
   pb <- progress_bar$new(format = "[:bar] :percent :eta", total = nrow(non_imp_pts[[w-1]]))
   tmp <- list()
   for (i in seq_len(nrow(non_imp_pts[[w-1]]))) {
-    res <- t(apply(non_imp_pts[[w-1]][i,], 1, hmer_res, c(1, 2, 10, 20), 'pSC'))
+    res <- t(apply(non_imp_pts[[w-1]][i,], 1, hmer_res, c(1, 2, 10, 50), 'pSC'))
     tmp[[i]] <- data.frame(res)[, names(targets)]
     pb$tick()  # Advance the progress bar
   }
@@ -231,14 +231,16 @@ for(i in 2:100) {
   non_imp_pts[[w]] <- generate_new_design(c(ems[1:w]), (10*length(ranges))*2, targets, verbose = TRUE) # Generate new points
 }
 
-# 4. Results ==========
-# Isolate best parameter sets
+# 4. Calibration points ==========
 plaus_pts <- as.data.frame(do.call("rbind", wave_check))[1:length(parms)]
+plaus_pts <- sample_n(as.data.frame(do.call("rbind", wave_check))[1:length(parms)], size = 50000)
 
-pts_fin <- plaus_pts
+# export(plaus_pts, here("scripts", "others", "parms_y20.Rdata"))
+# export(plaus_pts, here("scripts", "others", "parms_y35.Rdata"))
+export(plaus_pts, here("scripts", "others", "parms_y50.Rdata"))
 
 quants <- c(0.025,0.5,0.975) # Set quantiles
-parameters <- apply(pts_fin, 2, quantile, probs = quants, na.rm = TRUE) # Set parameter quantiles
+parameters <- apply(plaus_pts, 2, quantile, probs = quants, na.rm = TRUE) # Set parameter quantiles
 t_parameters <- data.table::transpose(as.data.frame(parameters)) # Transpose parameters
 colnames(t_parameters) = rownames(parameters) # Set column names
 rownames(t_parameters) = colnames(parameters) # Set row names
@@ -247,6 +249,99 @@ rm(t_parameters) # Clean objects
 
 parameters$parameter <- c("gamma_a", "gamma_b", "gamma_c", "gamma_d")
 
-parameters[,c(1,2,3)] <- round(parameters[,c(1,2,3)],3) # Round to 2 decimal places
+parameters[,c(1,2,3)] <- round(parameters[,c(1,2,3)], 3) # Round to 3 decimal places
 table <- data.frame(parameter = parameters$parameter, low  = parameters$`2.5%`, med = parameters$`50%`, hig = parameters$`97.5%`) # Output table
-export(table, here("scripts", "others", "sc_rates.csv")) # Save data frame
+
+# export(table, here("scripts", "others", "sc_rates_y20.csv")) # Save data frame
+# export(table, here("scripts", "others", "sc_rates_y35.csv")) # Save data frame
+export(table, here("scripts", "others", "sc_rates_y50.csv")) # Save data frame
+
+rm(list = ls())
+
+# 5. SC run ==========
+# 5.1 Model
+sc_model <- function(parms, end_time = 50) {
+  
+  des <- function(time, state, parms) {
+    I <- state["I"]
+    S <- state["S"]
+    
+    # Determine gamma based on the current time
+    if (time >= 0 && time < 1) {
+      gamma <- parms[, 'gamma_a']
+    } else if (time >= 1 && time < 2) {
+      gamma <- parms[, 'gamma_b']
+    } else if (time >= 2 && time < 9) {
+      gamma <- parms[, 'gamma_c']
+    } else {
+      gamma <- parms[, 'gamma_d']
+    }
+    
+    dI <- -gamma * I
+    dS <- gamma * I
+    
+    return(list(c(dI, dS), pSC = S/1e5))
+  }
+  
+  state <- c(I = 1e5, S = 0)
+  times <- seq(from = 0, to = end_time, by = 1)
+  out <- deSolve::ode(y = state, times = times, func = des, parms = parms,
+                      method = 'lsoda', rtol = 1e-6, atol = 1e-6)
+  
+  df_out <- as.data.frame(out)
+  
+  if("pSC.S" %in% names(df_out)) {
+    names(df_out)[names(df_out) == 'pSC.S'] <- 'pSC'
+  }
+  
+  return(df_out)
+}
+
+# 5.2  Model loops
+# fits <- import(here("scripts", "others", "parms_y20.Rdata"))
+# fits <- import(here("scripts", "others", "parms_y35.Rdata"))
+fits <- import(here("scripts", "others", "parms_y50.Rdata"))
+
+loop <- list()
+
+pb <- progress_bar$new(format = "[:bar] :percent :eta", total = nrow(fits))
+for(i in 1:nrow(fits)) {
+  parms <- fits[i,]
+  
+  out <- as.data.frame(sc_model(parms))
+  loop[[i]] <- out
+  pb$tick()
+}
+
+run <- do.call("rbind", loop) %>% 
+  pivot_longer(cols = -time, names_to = "var", values_to = "values") %>% 
+  group_by(time, var) %>% 
+  summarise(val = median(values, na.rm = TRUE),
+            lo = quantile(values, 0.025, na.rm = TRUE),
+            hi = quantile(values, 0.975, na.rm = TRUE)) 
+
+# export(run, here("scripts", "others", "runs_y20.Rdata"))
+# export(run, here("scripts", "others", "runs_y35.Rdata"))
+export(run, here("scripts", "others", "runs_y50.Rdata"))
+
+rm(list = ls())
+
+# 5.3 Plot
+# run <- import(here("scripts", "others", "runs_y20.Rdata"))
+# run <- import(here("scripts", "others", "runs_y35.Rdata"))
+run <- import(here("scripts", "others", "runs_y50.Rdata"))
+
+# tiff(here("scripts", "others", "cleared_y20.tiff"), width = 15, height = 3, units = 'in', res = 150)
+# tiff(here("scripts", "others", "cleared_y35.tiff"), width = 15, height = 3, units = 'in', res = 150)
+tiff(here("scripts", "others", "cleared_y50.tiff"), width = 15, height = 3, units = 'in', res = 150)
+ggplot(filter(run, var == 'pSC')) +
+  geom_errorbar(data = targetsdb, aes(x = time, ymin = lo, ymax = hi), colour = '#000000', width = 0.5) + 
+  geom_line(aes(x = time, y = val), colour = '#CE2931') +
+  geom_ribbon(aes(x= time, ymin = lo, ymax = hi), fill = '#CE2931', alpha = 0.2) +
+  scale_y_continuous(labels = scales::percent_format(), expand = c(0.005, 0.005)) +
+  scale_x_continuous(expand = c(0.005, 0.005)) +
+  coord_cartesian(ylim = c(0.75, 1)) +
+  labs(x = 'Years', y = 'Proportion self-cleared/recovered') +
+  theme_minimal()
+dev.off()
+
