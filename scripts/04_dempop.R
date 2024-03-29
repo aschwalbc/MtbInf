@@ -7,7 +7,6 @@ library(data.table)
 library(rio)
 library(here)
 library(tidyverse)
-library(fst)
 
 # 1. Demographic data ==========
 # 1.1 Population
@@ -83,16 +82,18 @@ WPP <- WPP %>%
   select(-mort, -pop)
 rm(WPPb, WPPd)
 
-ARI <- import(here("data","ari","mARI_rev_mix.Rdata"))
-# ARI <- import(here("data","ari","ARI_rev_mix.Rdata"))
+input <- c("mARI_rev_mix.Rdata", "ARI_rev_mix.Rdata")
+output <- c("mARI_rev_mix_pop.Rdata", "ARI_rev_mix_pop.Rdata")
 
-ARI <- ARI %>%
-  left_join(WPP, by = c("iso3", "year", "ageARI"), relationship = 'many-to-many') %>% 
-  arrange(iso3, year, ageWPP, ageARI) %>% 
-  filter(!is.na(ageWPP)) 
-rm(WPP)
+for (i in 1:length(input)) {
+  ARI <- as.data.table(import(here("data", "ari", input[i])))
+  
+  ARI <- ARI %>%
+    left_join(WPP, by = c("iso3", "year", "ageARI"), relationship = 'many-to-many') %>% 
+    arrange(iso3, year, ageWPP, ageARI) %>% 
+    filter(!is.na(ageWPP)) 
 
-export(ARI, here("data","ari","mARI_rev_mix_pop.Rdata"))
-# write.fst(ARI, here("data","ari","ARI_rev_mix_pop.fst"))
+  export(ARI, here("data","ari",output[i]))
+}
 
 rm(list=ls())

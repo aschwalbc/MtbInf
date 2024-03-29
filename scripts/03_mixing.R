@@ -157,29 +157,29 @@ F3 <- ggplot() +
   theme_bw()
 
 # 5. Age-adjusted ARIs
-ARI <- as.data.table(import(here("data","gp","GP_rev.Rdata")))
-# ARI <- as.data.table(import(here("data","gp","GPruns_rev.Rdata")))
+input <- c("GP_rev.Rdata", "GPruns_rev.Rdata")
+output <- c("mARI_rev_mix.Rdata", "ARI_rev_mix.Rdata")
 
-ARI <- ARI %>% 
-  left_join(WHOkey, by = 'iso3') %>% 
-  left_join(relARI, by = c('iso3', 'reg'), relationship = 'many-to-many')
-rm(relARI)
+for (i in 1:length(input)) {
+  ARI <- as.data.table(import(here("data", "gp", input[i])))
 
-ARIna <- ARI %>% 
-  filter(is.na(relari)) %>% 
-  within(rm(ageARI, relari)) %>% 
-  left_join(relARIreg, by = c('reg'), relationship = 'many-to-many')
-rm(relARIreg)
-
-ARI <- ARI %>% 
-  filter(!is.na(relari)) %>% 
-  rbind(ARIna) %>% 
-  mutate(ari = exp(lari + (log(relari)))) %>% 
-  select(year, iso3, reg, starts_with("rep"), ageARI, ari) %>% 
-  arrange(iso3, year)
-rm(ARIna)
-
-export(ARI, here("data","ari","mARI_rev_mix.Rdata")) # Reversion - Mix
-# export(ARI, here("data","ari","ARI_rev_mix.Rdata")) # Reversion - Mix
+  ARI <- ARI %>% 
+    left_join(WHOkey, by = 'iso3') %>% 
+    left_join(relARI, by = c('iso3', 'reg'), relationship = 'many-to-many')
+  
+  ARIna <- ARI %>% 
+    filter(is.na(relari)) %>% 
+    within(rm(ageARI, relari)) %>% 
+    left_join(relARIreg, by = c('reg'), relationship = 'many-to-many')
+  
+  ARI <- ARI %>% 
+    filter(!is.na(relari)) %>% 
+    rbind(ARIna) %>% 
+    mutate(ari = exp(lari + (log(relari)))) %>% 
+    select(year, iso3, reg, starts_with("rep"), ageARI, ari) %>% 
+    arrange(iso3, year)
+  
+  export(ARI, here("data", "ari", output[i]))
+}
 
 rm(list=ls())
