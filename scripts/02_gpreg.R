@@ -13,8 +13,7 @@ library(MASS)
 library(Matrix)
 
 # 1. Data ==========
-ARI <- as.data.table(import(here("data","ari","ARI_rev.Rdata"))) # Reversion
-# ARI <- as.data.table(import(here("data","ari","ARI_norev.Rdata"))) # No reversion
+ARI <- as.data.table(import(here("data","ari","ARI_rev.Rdata")))
 
 iso <- unique(as.character(ARI$iso3)) # List unique ISO codes
 interp <- 1 # CHANGE HERE: Constant (0) or linear (1)
@@ -183,10 +182,6 @@ for(i in seq(1, length(iso))) {
 # Reversion: Save output
 save(erw_full, file = here("data","gp","GP_rev.Rdata"))
 save(runsdf_full,file = here("data","gp","GPruns_rev.Rdata"))
-
-# No reversion": Save output
-# save(erw_full, file = here("data","gp","GP_norev.Rdata"))
-# save(runsdf_full,file = here("data","gp","GPruns_norev.Rdata"))
 
 rm(list = ls())
 detach(package:MASS, unload = TRUE) # Detach due to issues with tidyverse "select" 
