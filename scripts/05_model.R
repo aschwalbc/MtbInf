@@ -10,7 +10,8 @@ library(deSolve)
 library(tictoc)
 library(data.table)
 
-# 1. Age-specific parameters ==========
+# 1. Parameters ==========
+# 1.1 Age-specific parameters
 ARI <- import(here("data","ari","mARI_rev_mix_pop.Rdata"))
 
 agp_0004 <- ARI %>% 
@@ -139,6 +140,11 @@ rm(list = ls(pattern = "^agp"))
 
 parameters <- as.data.table(parameters)
 
+# 1.2 Self-clearance rates
+gamma <- import(here("scripts", "self-clearance", "sc_rates_y20.csv"))
+# gamma <- import(here("scripts", "self-clearance", "sc_rates_y35.csv"))
+# gamma <- import(here("scripts", "self-clearance", "sc_rates_y50.csv"))
+
 # 2. Mtb Model ==========
 sis <- function(times, state, parms) {
   S0004  <- state["S0004"]; I0004a  <- state["I0004a"]; I0004b  <- state["I0004b"]; I0004c  <- state["I0004c"]; I0004d  <- state["I0004d"]
@@ -159,10 +165,10 @@ sis <- function(times, state, parms) {
   S7579  <- state["S7579"]; I7579a  <- state["I7579a"]; I7579b  <- state["I7579b"]; I7579c  <- state["I7579c"]; I7579d  <- state["I7579d"]
   S8000  <- state["S8000"]; I8000a  <- state["I8000a"]; I8000b  <- state["I8000b"]; I8000c  <- state["I8000c"]; I8000d  <- state["I8000d"]
   
-  gamma_a <- 1.650 # Self-clearance rate Y1 [1.586-1.728]
-  gamma_b <- 0.873 # Self-clearance rate Y2 [0.788-0.950]
-  gamma_c <- 0.134 # Self-clearance rate Y3-9 [0.119-0.148]
-  gamma_d <- 0.121 # Self-clearance rate Y10+ [0.073-0.165]
+  gamma_a <- gamma[gamma$parameter == 'gamma_a', 'med'] # Self-clearance rate Y1
+  gamma_b <- gamma[gamma$parameter == 'gamma_b', 'med'] # Self-clearance rate Y2
+  gamma_c <- gamma[gamma$parameter == 'gamma_c', 'med'] # Self-clearance rate Y3-9
+  gamma_d <- gamma[gamma$parameter == 'gamma_d', 'med']  # Self-clearance rate Y10+
   alpha <- 0 # Age transition
   kappa_ab <- 1 # Transition between infection years Y1 -> Y2
   kappa_bc <- 1 # Transition between infection years Y2 -> Y3-9
@@ -415,5 +421,5 @@ mtb <- do.call("rbind",list_df)
 toc()
 
 export(mtb, here("data","mtb","mMtb_rev_mix_pop_sc.Rdata"))
+rm(list=ls())
 
-         
