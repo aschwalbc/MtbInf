@@ -141,9 +141,11 @@ rm(list = ls(pattern = "^agp"))
 parameters <- as.data.table(parameters)
 
 # 1.2 Self-clearance rates
-gamma <- import(here("scripts", "self-clearance", "sc_rates_y20.csv"))
-# gamma <- import(here("scripts", "self-clearance", "sc_rates_y35.csv"))
-# gamma <- import(here("scripts", "self-clearance", "sc_rates_y50.csv"))
+gamma_y20 <- import(here("scripts", "self-clearance", "sc_rates_y20.csv"))
+gamma_y35 <- import(here("scripts", "self-clearance", "sc_rates_y35.csv"))
+gamma_y50 <- import(here("scripts", "self-clearance", "sc_rates_y50.csv"))
+gammas <- list('y20' = gamma_y20, 'y35' = gamma_y35, 'y50' = gamma_y50)
+rm(gamma_y20, gamma_y35, gamma_y50)
 
 # 2. Mtb Model ==========
 sis <- function(times, state, parms) {
@@ -300,126 +302,129 @@ sis <- function(times, state, parms) {
 # 3. Model run ==========
 times <- seq(from = 0, to = 100, by = 1)
 isos <- unique(ARI$iso3) # 171 countries
-list_df <- list()
 
-tic()
-for (c in 1:(length(isos))){
-  iso <- isos[c]
-  print(iso)
+for (g in 1:length(gammas)){
+  gamma <- gammas[[g]]
+  list_df <- list()
   
-  parms <- as.data.table(parameters) %>% filter(iso3 == iso)
-  ari <- as.data.table(ARI) %>% filter(iso3 == iso)
-
-  # ARIs at 1950
-  ARI0014 <- ari[year == 1950 & ageARI == "00-14", ari][1]
-  ARI1544 <- ari[year == 1950 & ageARI == "15-44", ari][1]
-  ARI4500 <- ari[year == 1950 & ageARI == "45+", ari][1]
+  tic()
+  for (c in 1:(length(isos))){
+    iso <- isos[c]
+    print(iso)
+    
+    parms <- as.data.table(parameters) %>% filter(iso3 == iso)
+    ari <- as.data.table(ARI) %>% filter(iso3 == iso)
+    
+    # ARIs at 1950
+    ARI0014 <- ari[year == 1950 & ageARI == "00-14", ari][1]
+    ARI1544 <- ari[year == 1950 & ageARI == "15-44", ari][1]
+    ARI4500 <- ari[year == 1950 & ageARI == "45+", ari][1]
+    
+    # Max age per age group
+    maxage <- c(5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,90)
+    
+    # Proportion viable (i.e. not self-cleared or recovered) 
+    viapr_a <- 1 - 0.809 # Y1 [0.801-0.817]
+    viapr_b <- 1 - 0.919 # Y2 [0.914-0.925]
+    viapr_c <- 1 - 0.972 # Y10 [0.969-0.975]
+    
+    # Initial states
+    state <- c(S0004 = exp(-ARI0014*2.5), 
+               I0004a = (1-exp(-ARI0014*2.5))*(1/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[1]-3)*viapr_c))), 
+               I0004b = (1-exp(-ARI0014*2.5))*((1*viapr_a)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[1]-3)*viapr_c))), 
+               I0004c = (1-exp(-ARI0014*2.5))*((2*viapr_b)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[1]-3)*viapr_c))),
+               I0004d = (1-exp(-ARI0014*2.5))*(((maxage[1]-3)*viapr_c)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[1]-3)*viapr_c))), 
+               S0509 = exp(-ARI0014*7.5), 
+               I0509a = (1-exp(-ARI0014*7.5))*(1/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[2]-3)*viapr_c))), 
+               I0509b = (1-exp(-ARI0014*7.5))*((1*viapr_a)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[2]-3)*viapr_c))), 
+               I0509c = (1-exp(-ARI0014*7.5))*((2*viapr_b)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[2]-3)*viapr_c))),
+               I0509d = (1-exp(-ARI0014*7.5))*(((maxage[2]-3)*viapr_c)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[2]-3)*viapr_c))), 
+               S1014 = exp(-ARI0014*12.5), 
+               I1014a = (1-exp(-ARI0014*12.5))*(1/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[3]-3)*viapr_c))), 
+               I1014b = (1-exp(-ARI0014*12.5))*((1*viapr_a)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[3]-3)*viapr_c))), 
+               I1014c = (1-exp(-ARI0014*12.5))*((2*viapr_b)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[3]-3)*viapr_c))),
+               I1014d = (1-exp(-ARI0014*12.5))*(((maxage[3]-3)*viapr_c)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[3]-3)*viapr_c))), 
+               S1519 = exp(-ARI1544*17.5), 
+               I1519a = (1-exp(-ARI1544*17.5))*(1/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[4]-3)*viapr_c))), 
+               I1519b = (1-exp(-ARI1544*17.5))*((1*viapr_a)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[4]-3)*viapr_c))), 
+               I1519c = (1-exp(-ARI1544*17.5))*((2*viapr_b)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[4]-3)*viapr_c))),
+               I1519d = (1-exp(-ARI1544*17.5))*(((maxage[4]-3)*viapr_c)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[4]-3)*viapr_c))), 
+               S2024 = exp(-ARI1544*22.5), 
+               I2024a = (1-exp(-ARI1544*22.5))*(1/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[5]-3)*viapr_c))), 
+               I2024b = (1-exp(-ARI1544*22.5))*((1*viapr_a)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[5]-3)*viapr_c))), 
+               I2024c = (1-exp(-ARI1544*22.5))*((2*viapr_b)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[5]-3)*viapr_c))),
+               I2024d = (1-exp(-ARI1544*22.5))*(((maxage[5]-3)*viapr_c)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[5]-3)*viapr_c))), 
+               S2529 = exp(-ARI1544*27.5), 
+               I2529a = (1-exp(-ARI1544*27.5))*(1/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[6]-3)*viapr_c))), 
+               I2529b = (1-exp(-ARI1544*27.5))*((1*viapr_a)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[6]-3)*viapr_c))), 
+               I2529c = (1-exp(-ARI1544*27.5))*((2*viapr_b)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[6]-3)*viapr_c))),
+               I2529d = (1-exp(-ARI1544*27.5))*(((maxage[6]-3)*viapr_c)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[6]-3)*viapr_c))), 
+               S3034 = exp(-ARI1544*32.5), 
+               I3034a = (1-exp(-ARI1544*32.5))*(1/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[7]-3)*viapr_c))), 
+               I3034b = (1-exp(-ARI1544*32.5))*((1*viapr_a)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[7]-3)*viapr_c))), 
+               I3034c = (1-exp(-ARI1544*32.5))*((2*viapr_b)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[7]-3)*viapr_c))),
+               I3034d = (1-exp(-ARI1544*32.5))*(((maxage[7]-3)*viapr_c)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[7]-3)*viapr_c))), 
+               S3539 = exp(-ARI1544*37.5), 
+               I3539a = (1-exp(-ARI1544*37.5))*(1/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[8]-3)*viapr_c))), 
+               I3539b = (1-exp(-ARI1544*37.5))*((1*viapr_a)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[8]-3)*viapr_c))), 
+               I3539c = (1-exp(-ARI1544*37.5))*((2*viapr_b)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[8]-3)*viapr_c))),
+               I3539d = (1-exp(-ARI1544*37.5))*(((maxage[8]-3)*viapr_c)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[8]-3)*viapr_c))), 
+               S4044 = exp(-ARI1544*42.5), 
+               I4044a = (1-exp(-ARI1544*42.5))*(1/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[9]-3)*viapr_c))), 
+               I4044b = (1-exp(-ARI1544*42.5))*((1*viapr_a)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[9]-3)*viapr_c))), 
+               I4044c = (1-exp(-ARI1544*42.5))*((2*viapr_b)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[9]-3)*viapr_c))),
+               I4044d = (1-exp(-ARI1544*42.5))*(((maxage[9]-3)*viapr_c)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[9]-3)*viapr_c))), 
+               S4549 = exp(-ARI4500*47.5), 
+               I4549a = (1-exp(-ARI4500*47.5))*(1/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[10]-3)*viapr_c))), 
+               I4549b = (1-exp(-ARI4500*47.5))*((1*viapr_a)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[10]-3)*viapr_c))), 
+               I4549c = (1-exp(-ARI4500*47.5))*((2*viapr_b)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[10]-3)*viapr_c))),
+               I4549d = (1-exp(-ARI4500*47.5))*(((maxage[10]-3)*viapr_c)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[10]-3)*viapr_c))), 
+               S5054 = exp(-ARI4500*52.5), 
+               I5054a = (1-exp(-ARI4500*52.5))*(1/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[11]-3)*viapr_c))), 
+               I5054b = (1-exp(-ARI4500*52.5))*((1*viapr_a)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[11]-3)*viapr_c))), 
+               I5054c = (1-exp(-ARI4500*52.5))*((2*viapr_b)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[11]-3)*viapr_c))),
+               I5054d = (1-exp(-ARI4500*52.5))*(((maxage[11]-3)*viapr_c)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[11]-3)*viapr_c))), 
+               S5559 = exp(-ARI4500*57.5), 
+               I5559a = (1-exp(-ARI4500*57.5))*(1/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[12]-3)*viapr_c))), 
+               I5559b = (1-exp(-ARI4500*57.5))*((1*viapr_a)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[12]-3)*viapr_c))), 
+               I5559c = (1-exp(-ARI4500*57.5))*((2*viapr_b)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[12]-3)*viapr_c))),
+               I5559d = (1-exp(-ARI4500*57.5))*(((maxage[12]-3)*viapr_c)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[12]-3)*viapr_c))), 
+               S6064 = exp(-ARI4500*62.5), 
+               I6064a = (1-exp(-ARI4500*62.5))*(1/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[13]-3)*viapr_c))), 
+               I6064b = (1-exp(-ARI4500*62.5))*((1*viapr_a)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[13]-3)*viapr_c))), 
+               I6064c = (1-exp(-ARI4500*62.5))*((2*viapr_b)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[13]-3)*viapr_c))),
+               I6064d = (1-exp(-ARI4500*62.5))*(((maxage[13]-3)*viapr_c)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[13]-3)*viapr_c))), 
+               S6569 = exp(-ARI4500*67.5), 
+               I6569a = (1-exp(-ARI4500*67.5))*(1/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[14]-3)*viapr_c))), 
+               I6569b = (1-exp(-ARI4500*67.5))*((1*viapr_a)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[14]-3)*viapr_c))), 
+               I6569c = (1-exp(-ARI4500*67.5))*((2*viapr_b)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[14]-3)*viapr_c))),
+               I6569d = (1-exp(-ARI4500*67.5))*(((maxage[14]-3)*viapr_c)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[14]-3)*viapr_c))), 
+               S7074 = exp(-ARI4500*72.5), 
+               I7074a = (1-exp(-ARI4500*72.5))*(1/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[15]-3)*viapr_c))), 
+               I7074b = (1-exp(-ARI4500*72.5))*((1*viapr_a)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[15]-3)*viapr_c))), 
+               I7074c = (1-exp(-ARI4500*72.5))*((2*viapr_b)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[15]-3)*viapr_c))),
+               I7074d = (1-exp(-ARI4500*72.5))*(((maxage[15]-3)*viapr_c)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[15]-3)*viapr_c))), 
+               S7579 = exp(-ARI4500*77.5), 
+               I7579a = (1-exp(-ARI4500*77.5))*(1/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[16]-3)*viapr_c))), 
+               I7579b = (1-exp(-ARI4500*77.5))*((1*viapr_a)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[16]-3)*viapr_c))), 
+               I7579c = (1-exp(-ARI4500*77.5))*((2*viapr_b)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[16]-3)*viapr_c))),
+               I7579d = (1-exp(-ARI4500*77.5))*(((maxage[16]-3)*viapr_c)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[16]-3)*viapr_c))), 
+               S8000 = exp(-ARI4500*85), 
+               I8000a = (1-exp(-ARI4500*85))*(1/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[17]-3)*viapr_c))), 
+               I8000b = (1-exp(-ARI4500*85))*((1*viapr_a)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[17]-3)*viapr_c))), 
+               I8000c = (1-exp(-ARI4500*85))*((2*viapr_b)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[17]-3)*viapr_c))),
+               I8000d = (1-exp(-ARI4500*85))*(((maxage[17]-3)*viapr_c)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[17]-3)*viapr_c))))
+    
+    output_raw <- ode(y = state, times = times, func = sis, 
+                      parms = parms, method = "lsoda")
+    
+    df <- data.frame("iso3" = iso, cbind(output_raw))
+    list_df[[c]] <- df
+  }
   
-  # Max age per age group
-  maxage <- c(5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,90)
-  
-  # Proportion viable (i.e. not self-cleared or recovered) 
-  viapr_a <- 1 - 0.809 # Y1 [0.801-0.817]
-  viapr_b <- 1 - 0.919 # Y2 [0.914-0.925]
-  viapr_c <- 1 - 0.972 # Y10 [0.969-0.975]
-  
-  # Initial states
-  state <- c(S0004 = exp(-ARI0014*2.5), 
-             I0004a = (1-exp(-ARI0014*2.5))*(1/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[1]-3)*viapr_c))), 
-             I0004b = (1-exp(-ARI0014*2.5))*((1*viapr_a)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[1]-3)*viapr_c))), 
-             I0004c = (1-exp(-ARI0014*2.5))*((2*viapr_b)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[1]-3)*viapr_c))),
-             I0004d = (1-exp(-ARI0014*2.5))*(((maxage[1]-3)*viapr_c)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[1]-3)*viapr_c))), 
-             S0509 = exp(-ARI0014*7.5), 
-             I0509a = (1-exp(-ARI0014*7.5))*(1/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[2]-3)*viapr_c))), 
-             I0509b = (1-exp(-ARI0014*7.5))*((1*viapr_a)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[2]-3)*viapr_c))), 
-             I0509c = (1-exp(-ARI0014*7.5))*((2*viapr_b)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[2]-3)*viapr_c))),
-             I0509d = (1-exp(-ARI0014*7.5))*(((maxage[2]-3)*viapr_c)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[2]-3)*viapr_c))), 
-             S1014 = exp(-ARI0014*12.5), 
-             I1014a = (1-exp(-ARI0014*12.5))*(1/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[3]-3)*viapr_c))), 
-             I1014b = (1-exp(-ARI0014*12.5))*((1*viapr_a)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[3]-3)*viapr_c))), 
-             I1014c = (1-exp(-ARI0014*12.5))*((2*viapr_b)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[3]-3)*viapr_c))),
-             I1014d = (1-exp(-ARI0014*12.5))*(((maxage[3]-3)*viapr_c)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[3]-3)*viapr_c))), 
-             S1519 = exp(-ARI1544*17.5), 
-             I1519a = (1-exp(-ARI1544*17.5))*(1/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[4]-3)*viapr_c))), 
-             I1519b = (1-exp(-ARI1544*17.5))*((1*viapr_a)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[4]-3)*viapr_c))), 
-             I1519c = (1-exp(-ARI1544*17.5))*((2*viapr_b)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[4]-3)*viapr_c))),
-             I1519d = (1-exp(-ARI1544*17.5))*(((maxage[4]-3)*viapr_c)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[4]-3)*viapr_c))), 
-             S2024 = exp(-ARI1544*22.5), 
-             I2024a = (1-exp(-ARI1544*22.5))*(1/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[5]-3)*viapr_c))), 
-             I2024b = (1-exp(-ARI1544*22.5))*((1*viapr_a)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[5]-3)*viapr_c))), 
-             I2024c = (1-exp(-ARI1544*22.5))*((2*viapr_b)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[5]-3)*viapr_c))),
-             I2024d = (1-exp(-ARI1544*22.5))*(((maxage[5]-3)*viapr_c)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[5]-3)*viapr_c))), 
-             S2529 = exp(-ARI1544*27.5), 
-             I2529a = (1-exp(-ARI1544*27.5))*(1/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[6]-3)*viapr_c))), 
-             I2529b = (1-exp(-ARI1544*27.5))*((1*viapr_a)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[6]-3)*viapr_c))), 
-             I2529c = (1-exp(-ARI1544*27.5))*((2*viapr_b)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[6]-3)*viapr_c))),
-             I2529d = (1-exp(-ARI1544*27.5))*(((maxage[6]-3)*viapr_c)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[6]-3)*viapr_c))), 
-             S3034 = exp(-ARI1544*32.5), 
-             I3034a = (1-exp(-ARI1544*32.5))*(1/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[7]-3)*viapr_c))), 
-             I3034b = (1-exp(-ARI1544*32.5))*((1*viapr_a)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[7]-3)*viapr_c))), 
-             I3034c = (1-exp(-ARI1544*32.5))*((2*viapr_b)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[7]-3)*viapr_c))),
-             I3034d = (1-exp(-ARI1544*32.5))*(((maxage[7]-3)*viapr_c)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[7]-3)*viapr_c))), 
-             S3539 = exp(-ARI1544*37.5), 
-             I3539a = (1-exp(-ARI1544*37.5))*(1/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[8]-3)*viapr_c))), 
-             I3539b = (1-exp(-ARI1544*37.5))*((1*viapr_a)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[8]-3)*viapr_c))), 
-             I3539c = (1-exp(-ARI1544*37.5))*((2*viapr_b)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[8]-3)*viapr_c))),
-             I3539d = (1-exp(-ARI1544*37.5))*(((maxage[8]-3)*viapr_c)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[8]-3)*viapr_c))), 
-             S4044 = exp(-ARI1544*42.5), 
-             I4044a = (1-exp(-ARI1544*42.5))*(1/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[9]-3)*viapr_c))), 
-             I4044b = (1-exp(-ARI1544*42.5))*((1*viapr_a)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[9]-3)*viapr_c))), 
-             I4044c = (1-exp(-ARI1544*42.5))*((2*viapr_b)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[9]-3)*viapr_c))),
-             I4044d = (1-exp(-ARI1544*42.5))*(((maxage[9]-3)*viapr_c)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[9]-3)*viapr_c))), 
-             S4549 = exp(-ARI4500*47.5), 
-             I4549a = (1-exp(-ARI4500*47.5))*(1/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[10]-3)*viapr_c))), 
-             I4549b = (1-exp(-ARI4500*47.5))*((1*viapr_a)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[10]-3)*viapr_c))), 
-             I4549c = (1-exp(-ARI4500*47.5))*((2*viapr_b)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[10]-3)*viapr_c))),
-             I4549d = (1-exp(-ARI4500*47.5))*(((maxage[10]-3)*viapr_c)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[10]-3)*viapr_c))), 
-             S5054 = exp(-ARI4500*52.5), 
-             I5054a = (1-exp(-ARI4500*52.5))*(1/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[11]-3)*viapr_c))), 
-             I5054b = (1-exp(-ARI4500*52.5))*((1*viapr_a)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[11]-3)*viapr_c))), 
-             I5054c = (1-exp(-ARI4500*52.5))*((2*viapr_b)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[11]-3)*viapr_c))),
-             I5054d = (1-exp(-ARI4500*52.5))*(((maxage[11]-3)*viapr_c)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[11]-3)*viapr_c))), 
-             S5559 = exp(-ARI4500*57.5), 
-             I5559a = (1-exp(-ARI4500*57.5))*(1/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[12]-3)*viapr_c))), 
-             I5559b = (1-exp(-ARI4500*57.5))*((1*viapr_a)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[12]-3)*viapr_c))), 
-             I5559c = (1-exp(-ARI4500*57.5))*((2*viapr_b)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[12]-3)*viapr_c))),
-             I5559d = (1-exp(-ARI4500*57.5))*(((maxage[12]-3)*viapr_c)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[12]-3)*viapr_c))), 
-             S6064 = exp(-ARI4500*62.5), 
-             I6064a = (1-exp(-ARI4500*62.5))*(1/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[13]-3)*viapr_c))), 
-             I6064b = (1-exp(-ARI4500*62.5))*((1*viapr_a)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[13]-3)*viapr_c))), 
-             I6064c = (1-exp(-ARI4500*62.5))*((2*viapr_b)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[13]-3)*viapr_c))),
-             I6064d = (1-exp(-ARI4500*62.5))*(((maxage[13]-3)*viapr_c)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[13]-3)*viapr_c))), 
-             S6569 = exp(-ARI4500*67.5), 
-             I6569a = (1-exp(-ARI4500*67.5))*(1/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[14]-3)*viapr_c))), 
-             I6569b = (1-exp(-ARI4500*67.5))*((1*viapr_a)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[14]-3)*viapr_c))), 
-             I6569c = (1-exp(-ARI4500*67.5))*((2*viapr_b)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[14]-3)*viapr_c))),
-             I6569d = (1-exp(-ARI4500*67.5))*(((maxage[14]-3)*viapr_c)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[14]-3)*viapr_c))), 
-             S7074 = exp(-ARI4500*72.5), 
-             I7074a = (1-exp(-ARI4500*72.5))*(1/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[15]-3)*viapr_c))), 
-             I7074b = (1-exp(-ARI4500*72.5))*((1*viapr_a)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[15]-3)*viapr_c))), 
-             I7074c = (1-exp(-ARI4500*72.5))*((2*viapr_b)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[15]-3)*viapr_c))),
-             I7074d = (1-exp(-ARI4500*72.5))*(((maxage[15]-3)*viapr_c)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[15]-3)*viapr_c))), 
-             S7579 = exp(-ARI4500*77.5), 
-             I7579a = (1-exp(-ARI4500*77.5))*(1/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[16]-3)*viapr_c))), 
-             I7579b = (1-exp(-ARI4500*77.5))*((1*viapr_a)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[16]-3)*viapr_c))), 
-             I7579c = (1-exp(-ARI4500*77.5))*((2*viapr_b)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[16]-3)*viapr_c))),
-             I7579d = (1-exp(-ARI4500*77.5))*(((maxage[16]-3)*viapr_c)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[16]-3)*viapr_c))), 
-             S8000 = exp(-ARI4500*85), 
-             I8000a = (1-exp(-ARI4500*85))*(1/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[17]-3)*viapr_c))), 
-             I8000b = (1-exp(-ARI4500*85))*((1*viapr_a)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[17]-3)*viapr_c))), 
-             I8000c = (1-exp(-ARI4500*85))*((2*viapr_b)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[17]-3)*viapr_c))),
-             I8000d = (1-exp(-ARI4500*85))*(((maxage[17]-3)*viapr_c)/sum(1+(1*viapr_a)+(2*viapr_b)+((maxage[17]-3)*viapr_c))))
-  
-  output_raw <- ode(y = state, times = times, func = sis, 
-                    parms = parms, method = "lsoda")
-  
-  df <- data.frame("iso3" = iso, cbind(output_raw))
-  list_df[[c]] <- df
+  mtb <- do.call("rbind",list_df)
+  export(mtb, here("data", "mtb", sprintf("mMtb_rev_mix_pop_sc%s.Rdata", names(gammas)[g])))
+  toc()
 }
 
-mtb <- do.call("rbind",list_df)
-toc()
-
-export(mtb, here("data","mtb","mMtb_rev_mix_pop_sc.Rdata"))
 rm(list=ls())
-
