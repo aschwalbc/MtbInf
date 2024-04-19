@@ -65,7 +65,7 @@ vstb <- (exp(sig^2) - 1) * exp(2 * mu + sig^2)
 rm(mu, sig)
 
 # 1.3.2 Reversion adjustment
-rev <- 2.9 # True ARI = 2-5x higher (Schwalb AJE 2023)
+rev <- 2.9 # True ARI = 2-5x higher (Schwalb AJE 2023 - KPS Rev)
 revE <- 1.5 # Increasing variance estimates by 50%
 
 # 1.3.3 HIV in TB
