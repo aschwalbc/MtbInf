@@ -163,7 +163,7 @@ for(i in seq(1, length(iso))) {
   
   save(erw, file = paste0('data/gp/iso/',cn,'.Rdata'))
   
-  runs <- mvrnorm(n = 2e2,mu = as.numeric(tot$mg), Sigma = as.matrix(symmpart(tot$cg)))
+  runs <- mvrnorm(n = 1e3, mu = as.numeric(tot$mg), Sigma = as.matrix(symmpart(tot$cg)))
   runsdf <- data.frame(year = tez+fyear, iso3 = as.character(unique(db$iso3)),
                        lari = c(t(runs)), rep = rep(1:nrow(runs), each = ncol(runs)))
   
