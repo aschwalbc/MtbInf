@@ -1,6 +1,6 @@
 ## Analysis code for Schwalb et al. 2024
 ## Distributed under CC BY 4.0
-## RScript 05: Model.R
+## RScript 05: Model.R (Full run)
 
 # Packages ==========
 library(rio)
