@@ -1,12 +1,15 @@
 ## Analysis code for Schwalb et al. 2024
 ## Distributed under CC BY 4.0
-## RScript 06: mtbburden
+## RScript 06: Mtbburden.R
 
 # Packages ==========
 library(rio)
 library(here)
 library(tidyverse)
 library(data.table)
+library(rnaturalearth)
+library(sf)
+library(tmap)
 
 # 1. Population data ==========
 POP <- import(here("data","sources","pop","WPP_Pop_1950-2100.csv"))
@@ -24,8 +27,17 @@ POP <- POP %>%
   summarise(pop = sum(pop) * 1e3) %>% 
   pivot_wider(id_cols = c("iso3", "year"), names_from = ageWPP, values_from = pop)
 
-# 2. Mtb estimates ==========
-MTB <- import(here("data","mtb","mMtb_rev_mix_pop_sc.Rdata")) %>% 
+# 2. WHO region data ==========
+WHO <- as.data.table(import(here("data","sources","who","WHOest_2000-2022.csv")))
+
+WHO <- WHO %>% 
+  select(iso3, reg = g_whoregion) %>% 
+  distinct()
+
+# 3. Mtb estimates ==========
+MTB <- import(here("data","mtb","mMtb_rev_mix_pop_scy20.Rdata")) %>% 
+# MTB <- import(here("data","mtb","mMtb_rev_mix_pop_scy35.Rdata")) %>% 
+# MTB <- import(here("data","mtb","mMtb_rev_mix_pop_scy50.Rdata")) %>% 
   mutate(year = time + 1950) %>% 
   left_join(POP, by = c("iso3", "year")) %>% 
   mutate(across(matches("^S\\d{4}$"), ~ . * get(paste0("N", substr(cur_column(), 2, 5)))),
@@ -36,7 +48,8 @@ MTBiso <- MTB %>%
   mutate(It = rowSums(across(matches("^I\\d{4}[a-d]?$")))) %>% 
   mutate(rIt = rowSums(across(matches("^I\\d{4}[a-b]$")))) %>%
   mutate(Nt = rowSums(across(matches("^N\\d{4}$")))) %>% 
-  select(iso3, year, St, It, rIt, Nt) %>% 
+  left_join(WHO, by = c('iso3')) %>% 
+  select(iso3, year, reg, St, It, rIt, Nt) %>% 
   mutate(pI = It / Nt, prI = rIt / Nt, rI = prI / pI)
 
 MTBage_pct <- MTB %>% 
@@ -130,20 +143,36 @@ MTBglb <- MTBiso %>%
   summarise(St = sum(St), It = sum(It), rIt = sum(rIt), Nt = sum(Nt)) %>% 
   mutate(pI = It / Nt, prI = rIt / Nt, rI = prI / pI)
 
+MTBglbkid <- MTBage_num %>% 
+  filter(agegp %in% c('00-04','05-09','10-14')) %>% 
+  group_by(iso3, year, var) %>% 
+  summarise(val = sum(val)) %>% 
+  ungroup() %>% 
+  group_by(year, var) %>% 
+  summarise(val = sum(val))
+
+MTBreg <- MTBiso %>% 
+  group_by(reg, year) %>% 
+  summarise(St = sum(St), It = sum(It), rIt = sum(rIt), Nt = sum(Nt))
+  
 iso <- unique(MTB$iso3)
+iso30 <- c('AGO','BGD','BRA','CHN','PRK','COD','ETH','IND','IDN','KEN',
+           'MOZ','MMR','NGA','PAK','PHL','RUS','ZAF','THA','TZA','VNM',
+           'KHM','CAF','COG','LSO','LBR','NAM','PNG','SLE','ZMB','ZWE')
 
 pdf(here("plots","mtb","Inf_iso.pdf"), height = 6, width = 10)
 for(i in iso) {
-  mtbdb <- filter(MTB, iso3 == i)
-  val2019 <- filter(mtbdb, year == 2019)
+  i <- 'ZAF'
+  mtbdb <- filter(MTBiso, iso3 == i)
+  val2022 <- filter(mtbdb, year == 2022)
   p <- ggplot() +
-    geom_line(mtbdb, mapping = aes(x = year, y = pI, colour = 'All'), colour = 'black') +
-    geom_line(mtbdb, mapping = aes(x = year, y = prI, colour = 'Recent'), colour = 'red') +
-    geom_text(data = val2019, mapping = aes(x = 2019, y = pI, label = scales::percent(pI)), hjust = -0.1, vjust = 0, colour = 'black') +
-    geom_text(data = val2019, mapping = aes(x = 2019, y = prI, label = scales::percent(prI)), hjust = -0.1, vjust = 0, colour = 'red') +
-    scale_x_continuous(expand=c(0, 0), breaks = seq(1950, 2050, 25)) +
+    geom_line(mtbdb, mapping = aes(x = year, y = pI, colour = 'All'), colour = '#000000') +
+    geom_line(mtbdb, mapping = aes(x = year, y = prI, colour = 'Recent'), colour = '#FF5733') +
+    geom_text(data = val2022, mapping = aes(x = 2022, y = pI, label = scales::percent(pI)), hjust = -0.1, vjust = 0, colour = '#000000') +
+    geom_text(data = val2022, mapping = aes(x = 2022, y = prI, label = scales::percent(prI)), hjust = -0.1, vjust = 0, colour = '#FF5733') +
+    scale_x_continuous(expand=c(0, 0), breaks = seq(1960, 2050, 20)) +
     scale_y_continuous(labels = scales::label_percent(), expand=c(0, 0), breaks = seq(0, 1, 0.2)) +
-    coord_cartesian(ylim = c(0, 1), xlim = c(1950, 2050)) +
+    coord_cartesian(ylim = c(0, 0.5), xlim = c(1960, 2050)) +
     labs(title = i, x = 'Year', y = 'Proportion infected (%)') +
     theme_bw() + 
     theme(legend.position = 'bottom')
@@ -151,28 +180,63 @@ for(i in iso) {
 }
 dev.off()
 
-pdf(here("plots","mtb","Inf_agegp.pdf"), height = 6, width = 10)
-for(i in iso) {
+# pdf(here("plots","mtb","Inf_agegp.pdf"), height = 6, width = 10)
+# for(i in iso) {  
+  i <- 'JPN'
   mtbdb <- filter(MTBage_num, iso3 == i, year == 2022)
   p <- ggplot() +
     geom_col(mtbdb, mapping = aes(x = agegp, y = val, fill = var), position = "stack") +
     scale_fill_manual(values = c("S" = "#D3D3D3", "dI" = "#900C3F", "rI" = "#FF5733"),
-                      labels = c("S" = "Susceptible", "dI" = "Distally Infected", "rI" = "Recently Infected")) +
+                      labels = c("S" = "Susceptible", "dI" = "Distally Infected (2+yrs)", "rI" = "Recently Infected (<2yrs)")) +
     scale_y_continuous(labels = scales::label_number(scale = 1e-6, suffix = 'M')) +
     labs(title = i, x = 'Age group', y = 'Number', fill = 'Type') +
     theme_bw() + 
     theme(legend.position = 'bottom')
+  png(here("plots","mtb","Inf_agegp_iso.png"), width = 8, height = 5, units = 'in', res = 200)
   print(p)
-}
+# }
 dev.off()
 
-pdf(here("plots","mtb","rInf.pdf"), height = 6, width = 10)
+png(here("plots","mtb","RecInf.png"), width = 8, height = 5, units = 'in', res = 150)
 ggplot() +
-  geom_line(gMTB, mapping = aes(x = year, y = rI, colour = 'Recent'), colour = 'red') +
-  scale_x_continuous(expand=c(0, 0), breaks = seq(1950, 2050, 25)) +
+  geom_line(MTBglb, mapping = aes(x = year, y = rI, colour = 'Recent'), colour = 'red') +
+  scale_x_continuous(expand=c(0, 0), breaks = seq(1960, 2050, 20)) +
   scale_y_continuous(labels = scales::label_percent(), expand=c(0, 0), breaks = seq(0, 1, 0.2)) +
-  coord_cartesian(ylim = c(0, 0.6), xlim = c(1950, 2050)) +
+  coord_cartesian(ylim = c(0, 0.6), xlim = c(1960, 2050)) +
   labs(x = 'Year', y = 'Proportion recently infected / all infections (%)') +
   theme_bw() + 
   theme(legend.position = 'bottom')
+dev.off()
+
+MTB2022 <- MTBiso %>%
+  filter(year == 2022) %>%
+  mutate(prev = cut(pI, breaks = c(-Inf, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3),
+                    labels = c('0 - 5%', '5 - 10%', '10 - 15%', '15 - 20%', '20 - 25%', '25 - 30%'),
+                    include.lowest = TRUE))
+
+world <- ne_countries(scale = 'medium', type = 'countries', returnclass = 'sf') %>% 
+  filter(!type %in% c('Dependency','Indeterminate','Disputed')) %>% 
+  left_join(MTB2022, by = c("iso_a3_eh" = "iso3"))
+
+colours <- c('0 - 5%' = "#fee5d9", '5 - 10%' = "#fcae91", '10 - 15%' = "#fb6a4a",
+            '15 - 20%' = "#de2d26", '20 - 25%' = "#a50f15", '25 - 30%' = "#67000d")
+
+png(here("plots","mtb","MtbMap.png"), width = 10, height = 5, units = 'in', res = 300)
+ggplot(data = world) +
+  geom_sf(aes(fill = prev)) +
+  scale_fill_manual(values = colours, na.value = "#F7F7F7", guide = guide_legend(title = "Prevalence")) +
+  theme_void() +
+  theme(legend.position = c(0.10, 0.25),
+        legend.direction = "vertical",
+        legend.justification = "center",
+        legend.background = element_rect(fill = "#FFFFFF", colour = NA),
+        legend.key = element_blank(),
+        plot.background = element_blank(),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        axis.title = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank()) +
+  coord_sf(crs = "+proj=cea +lon_0=0 +lat_ts=45 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs")
 dev.off()
