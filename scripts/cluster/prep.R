@@ -18,7 +18,7 @@ fileContent <- file("iso_list.txt")
 writeLines(all_iso, fileContent)
 close(fileContent)
 
-# Creates .txt file with all repetitions (1-200)
+# Creates .txt file with all repetitions (1-1000)
 all_reps <- unique(as.character(ARI$rep))
 fileContent <- file("rep_list.txt")
 writeLines(all_reps, fileContent)
@@ -29,6 +29,9 @@ isorep <- split(ARI, list(ARI$iso3, ARI$rep))
 
 # Creates .fst files for each ISO3 and repetitions
 invisible(lapply(names(isorep), function(name) {
-  file_path <- sprintf('ari/%s.fst', name)
+  filename <- strsplit(name, "\\.")[[1]]
+  iso <- filename[1]
+  rep <- sprintf("%04d", as.integer(filename[2]))
+  file_path <- sprintf('ari/%s_%s.fst', iso, rep)
   write.fst(isorep[[name]], file_path)
 }))
