@@ -305,7 +305,7 @@ ARI1544 <- ari[year == 1950 & ageARI == "15-44", ari][1]
 ARI4500 <- ari[year == 1950 & ageARI == "45+", ari][1]
 
 # Max age per age group
-maxage <- c(5,10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 90)
+maxage <- c(5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 90)
 
 # Proportion viable (i.e. not self-cleared or recovered) 
 viapr_a <- 1 - 0.809 # Y1 [0.801-0.817]
