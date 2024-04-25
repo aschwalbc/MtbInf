@@ -276,10 +276,14 @@ for(i in iso) {
   p <- ggplot(data = mtbdb) +
     geom_line(mapping = aes(x = year, y = val, colour = var)) +
     geom_ribbon(mapping = aes(x = year, ymin = lo, ymax = hi, fill = var), alpha = 0.2) +
+    scale_colour_manual(values = c("pI" = "#900C3F", "prI" = "#FF5733"),
+                        labels = c("pI" = "All infections", "prI" = "Recent infections")) +
+    scale_fill_manual(values = c("pI" = "#900C3F", "prI" = "#FF5733"),
+                      labels = c("pI" = "All infections", "prI" = "Recent infections")) +
     scale_x_continuous(expand=c(0, 0), breaks = seq(1960, 2050, 20)) +
     scale_y_continuous(labels = scales::label_percent(), expand=c(0, 0), breaks = seq(0, 1, 0.2)) +
     coord_cartesian(ylim = c(0, 0.5), xlim = c(1960, 2022)) +
-    labs(title = i, x = 'Year', y = 'Proportion infected (%)') +
+    labs(title = i, x = 'Year', y = 'Proportion infected (%)', colour = 'Type', fill = 'Type') +
     theme_bw() + 
     theme(legend.position = 'bottom')
   print(p)
@@ -303,8 +307,8 @@ dev.off()
 
 png(here("plots","06_mtbburden","RecInf.png"), width = 8, height = 5, units = 'in', res = 150)
 ggplot() +
-  geom_line(filter(MTBglb, var == 'rI'), mapping = aes(x = year, y = val, colour = 'Recent'), colour = 'red') +
-  geom_ribbon(filter(MTBglb, var == 'rI'), mapping = aes(x = year, ymin = lo, ymax = hi, fill = 'Recent'), fill = 'red', alpha = 0.2) +
+  geom_line(filter(MTBglb, var == 'rI'), mapping = aes(x = year, y = val, colour = 'Recent'), colour = '#FF5733') +
+  geom_ribbon(filter(MTBglb, var == 'rI'), mapping = aes(x = year, ymin = lo, ymax = hi, fill = 'Recent'), fill = '#FF5733', alpha = 0.2) +
   scale_x_continuous(expand=c(0, 0), breaks = seq(1960, 2050, 20)) +
   scale_y_continuous(labels = scales::label_percent(), expand=c(0, 0), breaks = seq(0, 1, 0.2)) +
   coord_cartesian(ylim = c(0, 0.6), xlim = c(1960, 2022)) +
