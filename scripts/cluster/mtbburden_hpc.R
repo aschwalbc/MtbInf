@@ -406,4 +406,4 @@ output <- ode(y = state, times = times, func = sis,
 
 mtb <- data.table("iso3" = iso, 'rep' = rep, cbind(output))
 
-write.fst(mtb, here("mtb", paste0(iso, "_", rep, ".fst")))
+write.fst(mtb, here("mtb", paste0(iso, "_", sprintf('%04d', rep), ".fst")))
