@@ -2,7 +2,7 @@ rm(list=ls())
 
 suppressPackageStartupMessages({
    library(here)
-   library(fst)
+   library(rio)
 })
 
 # Gets command line arguments
@@ -10,7 +10,7 @@ args <- commandArgs(trailingOnly = TRUE)
 data <- args[1]
 
 # Load data
-ARI <- read.fst(here(data))
+ARI <- import(here(data))
 
 # Creates .txt file with all unique ISO3 codes
 all_iso <- unique(as.character(ARI$iso3))
@@ -27,11 +27,11 @@ close(fileContent)
 # Split data frame into ISO3 and repetitions 
 isorep <- split(ARI, list(ARI$iso3, ARI$rep))
 
-# Creates .fst files for each ISO3 and repetitions
+# Creates files for each ISO3 and repetitions
 invisible(lapply(names(isorep), function(name) {
   filename <- strsplit(name, "\\.")[[1]]
   iso <- filename[1]
   rep <- sprintf("%04d", as.integer(filename[2]))
-  file_path <- sprintf('ari/%s_%s.fst', iso, rep)
-  write.fst(isorep[[name]], file_path)
+  file_path <- sprintf('ari/%s_%s.Rdata', iso, rep)
+  export(isorep[[name]], file_path)
 }))
