@@ -5,8 +5,8 @@ suppressPackageStartupMessages({
    library(tidyverse)
    library(deSolve)
    library(data.table)
+   library(rio)
    library(stats)
-   library(fst)
 })
 
 # Gets command line arguments
@@ -15,12 +15,16 @@ iso  <- args[1]
 rep <- args[2]
 
 # Load data
-ARI <- read.fst(here("ari", paste0(iso, ".", rep, ".fst")))
+ARI <- import(here("ari", paste0(iso, ".", rep, ".Rdata")))
 ARI <- as.data.table(ARI)
 
 # Self-clearance rates
 gamma_runs <- import(here("sc", "parms_y20.Rdata"))
-  
+
+# Protection from reinfection
+pi <- rbeta(1, 20.7, 77.8)
+
+# Parameters  
 agp_0004 <- ARI %>% 
   filter(ageWPP == '00-04') %>% 
   mutate(lambda_0014 = ari) %>%
@@ -147,6 +151,7 @@ rm(list = ls(pattern = "^agp"))
 
 parameters <- as.data.table(parameters)
 
+# Model
 sis <- function(times, state, parms) {
   S0004  <- state["S0004"]; I0004a  <- state["I0004a"]; I0004b  <- state["I0004b"]; I0004c  <- state["I0004c"]; I0004d  <- state["I0004d"]
   S0509  <- state["S0509"]; I0509a  <- state["I0509a"]; I0509b  <- state["I0509b"]; I0509c  <- state["I0509c"]; I0509d  <- state["I0509d"]
@@ -175,8 +180,8 @@ sis <- function(times, state, parms) {
   kappa_cd <- 1/8 # Transition between infection years Y3-9 -> Y10+
   pi_a <- 0 # Reinfection Y1 
   pi_b <- 0 # Reinfection Y2
-  pi_c <- 0.21 # Reinfection Y3-9 [0.14-0.30] 
-  pi_d <- 0.21 # Reinfection Y10+ [0.14-0.30]
+  pi_c <- pi # Reinfection Y3-9 [0.14-0.30] 
+  pi_d <- pi # Reinfection Y10+ [0.14-0.30]
   
   par <- names(parms)
   par <- par[-c(1,2,3)]
@@ -406,4 +411,4 @@ output <- ode(y = state, times = times, func = sis,
 
 mtb <- data.table("iso3" = iso, 'rep' = rep, cbind(output))
 
-write.fst(mtb, here("mtb", paste0(iso, "_", sprintf('%04d', rep), ".fst")))
+export(mtb, here("mtb", paste0(iso, "_", sprintf('%04d', rep), ".Rdata")))
