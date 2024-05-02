@@ -141,10 +141,12 @@ rm(list = ls(pattern = "^agp"))
 parameters <- as.data.table(parameters)
 
 # 1.2 Self-clearance rates
-# 1.1 Self-clearance rates
 gamma_runs <- import(here("scripts", "self-clearance", "parms_y20.Rdata"))
 # gamma_runs <- import(here("scripts", "self-clearance", "parms_y35.Rdata"))
 # gamma_runs <- import(here("scripts", "self-clearance", "parms_y50.Rdata"))
+
+# 1.3 Protection from reinfection
+pi <- rbeta(1, 20.7, 77.8)
 
 # 2. Mtb Model ==========
 sis <- function(times, state, parms) {
@@ -175,8 +177,8 @@ sis <- function(times, state, parms) {
   kappa_cd <- 1/8 # Transition between infection years Y3-9 -> Y10+
   pi_a <- 0 # Reinfection Y1 
   pi_b <- 0 # Reinfection Y2
-  pi_c <- 0.21 # Reinfection Y3-9 [0.14-0.30] 
-  pi_d <- 0.21 # Reinfection Y10+ [0.14-0.30]
+  pi_c <- pi # Reinfection Y3-9 [0.14-0.30] 
+  pi_d <- pi # Reinfection Y10+ [0.14-0.30]
   
   par <- names(parms)
   par <- par[-c(1,2,3)]
