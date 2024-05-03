@@ -1,0 +1,4 @@
+parameter,low,med,hig
+gamma_a,1.593,1.661,1.733
+gamma_b,0.755,0.859,0.949
+gamma_c,0.115,0.133,0.15

@@ -17,18 +17,16 @@ library(progress)
 parms = c(
   gamma_a = 1.26, # Self-clearance Year 1
   gamma_b = 1.26, # Self-clearance Year 2
-  gamma_c = 0.50, # Self-clearance Year 3-9
-  gamma_d = 0.00) # Self-clearance Year 10+
+  gamma_c = 0.50) # Self-clearance Year 3-9
 
 # 1.2 Parameter ranges
 ranges = list(
   gamma_a = c(0,2), # Self-clearance Year 1
   gamma_b = c(0,2), # Self-clearance Year 2
-  gamma_c = c(0,2), # Self-clearance Year 3-9
-  gamma_d = c(0,1)) # Self-clearance Year 10+
+  gamma_c = c(0,2)) # Self-clearance Year 3-9
 
 # 2. Model ==========
-sc_model <- function(parms, end_time = 50) {
+sc_model <- function(parms, end_time = 10) {
   
   des <- function(time, state, parms) {
     I <- state["I"]
@@ -39,11 +37,9 @@ sc_model <- function(parms, end_time = 50) {
       gamma <- parms["gamma_a"]
     } else if (time >= 1 && time < 2) {
       gamma <- parms["gamma_b"]
-    } else if (time >= 2 && time < 9) {
-      gamma <- parms["gamma_c"]
     } else {
-      gamma <- parms["gamma_d"]
-    }
+      gamma <- parms["gamma_c"]
+    } 
     
     dI <- -gamma * I
     dS <- gamma * I
@@ -80,8 +76,7 @@ hmer_res <- function(params, times, outputs) {
 targets <- list(
   pSC1 = c(0.801, 0.817),
   pSC2 = c(0.914, 0.925),
-  pSC10 = c(0.969, 0.975),
-  pSC50 = c(0.985, 0.995))
+  pSC10 = c(0.969, 0.975))
 
 targetsdb <- as.data.frame(t(as.data.frame(targets))) # Create dataframe with fitting targets
 targetsdb$var <- substr(rownames(targetsdb),1,3) # Create variable classification
@@ -137,7 +132,7 @@ rm(ini_LHS_train, ini_LHS_val, ini_LHS) # Clean objects
 pb <- progress_bar$new(format = "[:bar] :percent :eta", total = nrow(ini_pts))
 tmp <- list()
 for (i in seq_len(nrow(ini_pts))) {
-  res <- t(apply(ini_pts[i,], 1, hmer_res, c(1, 2, 10, 50), 'pSC'))
+  res <- t(apply(ini_pts[i,], 1, hmer_res, c(1, 2, 10), 'pSC'))
   tmp[[i]] <- data.frame(res)[, names(targets)]
   pb$tick()  # Advance the progress bar
 }
@@ -181,13 +176,13 @@ invalid_bad[[1]] <- validation_diagnostics(ems[[1]], validation = wave_val[[1]],
 non_imp_pts[[1]] <- generate_new_design(ems[[1]], (10*length(ranges))*2, targets, verbose = TRUE) # Generate new points
 
 # 3.4 HMER loop runs
-for(i in 721:725) {
+for(i in 1001:2000) {
   w <- i # Update wave run
   
   pb <- progress_bar$new(format = "[:bar] :percent :eta", total = nrow(non_imp_pts[[w-1]]))
   tmp <- list()
   for (i in seq_len(nrow(non_imp_pts[[w-1]]))) {
-    res <- t(apply(non_imp_pts[[w-1]][i,], 1, hmer_res, c(1, 2, 10, 50), 'pSC'))
+    res <- t(apply(non_imp_pts[[w-1]][i,], 1, hmer_res, c(1, 2, 10), 'pSC'))
     tmp[[i]] <- data.frame(res)[, names(targets)]
     pb$tick()  # Advance the progress bar
   }
@@ -233,7 +228,7 @@ for(i in 721:725) {
 
 # 4. Calibration points ==========
 plaus_pts <- as.data.frame(do.call("rbind", wave_check))[1:length(parms)]
-plaus_pts <- sample_n(as.data.frame(do.call("rbind", wave_check))[1:length(parms)], size = 50000)
+plaus_pts <- sample_n(as.data.frame(do.call("rbind", wave_check))[1:length(parms)], size = 200000)
 
 # export(plaus_pts, here("scripts", "others", "parms_y20.Rdata"))
 # export(plaus_pts, here("scripts", "others", "parms_y35.Rdata"))
