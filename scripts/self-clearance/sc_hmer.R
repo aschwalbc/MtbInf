@@ -176,7 +176,7 @@ invalid_bad[[1]] <- validation_diagnostics(ems[[1]], validation = wave_val[[1]],
 non_imp_pts[[1]] <- generate_new_design(ems[[1]], (10*length(ranges))*2, targets, verbose = TRUE) # Generate new points
 
 # 3.4 HMER loop runs
-for(i in 1001:2000) {
+for(i in 5001:5500) {
   w <- i # Update wave run
   
   pb <- progress_bar$new(format = "[:bar] :percent :eta", total = nrow(non_imp_pts[[w-1]]))
@@ -230,9 +230,7 @@ for(i in 1001:2000) {
 plaus_pts <- as.data.frame(do.call("rbind", wave_check))[1:length(parms)]
 plaus_pts <- sample_n(as.data.frame(do.call("rbind", wave_check))[1:length(parms)], size = 200000)
 
-# export(plaus_pts, here("scripts", "others", "parms_y20.Rdata"))
-# export(plaus_pts, here("scripts", "others", "parms_y35.Rdata"))
-export(plaus_pts, here("scripts", "others", "parms_y50.Rdata"))
+export(plaus_pts, here("scripts", "self-clearance", "parms.Rdata"))
 
 quants <- c(0.025,0.5,0.975) # Set quantiles
 parameters <- apply(plaus_pts, 2, quantile, probs = quants, na.rm = TRUE) # Set parameter quantiles
@@ -242,19 +240,115 @@ rownames(t_parameters) = colnames(parameters) # Set row names
 parameters <- t_parameters # Rename parameters
 rm(t_parameters) # Clean objects
 
-parameters$parameter <- c("gamma_a", "gamma_b", "gamma_c", "gamma_d")
+parameters$parameter <- c("gamma_a", "gamma_b", "gamma_c")
 
 parameters[,c(1,2,3)] <- round(parameters[,c(1,2,3)], 3) # Round to 3 decimal places
 table <- data.frame(parameter = parameters$parameter, low  = parameters$`2.5%`, med = parameters$`50%`, hig = parameters$`97.5%`) # Output table
 
-# export(table, here("scripts", "others", "sc_rates_y20.csv")) # Save data frame
-# export(table, here("scripts", "others", "sc_rates_y35.csv")) # Save data frame
-export(table, here("scripts", "others", "sc_rates_y50.csv")) # Save data frame
+export(table, here("scripts", "self-clearance", "sc_rates.csv")) # Save data frame
 
 rm(list = ls())
 
 # 5. SC run ==========
 # 5.1 Model
+sc_model <- function(parms, end_time = 10) {
+  
+  des <- function(time, state, parms) {
+    I <- state["I"]
+    S <- state["S"]
+    
+    # Determine gamma based on the current time
+    if (time >= 0 && time < 1) {
+      gamma <- parms[, 'gamma_a']
+    } else if (time >= 1 && time < 2) {
+      gamma <- parms[, 'gamma_b']
+    } else {
+      gamma <- parms[, 'gamma_c']
+    } 
+    
+    dI <- -gamma * I
+    dS <- gamma * I
+    
+    return(list(c(dI, dS), pSC = S/1e5))
+  }
+  
+  state <- c(I = 1e5, S = 0)
+  times <- seq(from = 0, to = end_time, by = 1)
+  out <- deSolve::ode(y = state, times = times, func = des, parms = parms,
+                      method = 'lsoda', rtol = 1e-6, atol = 1e-6)
+  
+  df_out <- as.data.frame(out)
+  
+  if("pSC.S" %in% names(df_out)) {
+    names(df_out)[names(df_out) == 'pSC.S'] <- 'pSC'
+  }
+  
+  return(df_out)
+}
+
+# 5.2  Model loops
+fits <- import(here("scripts", "self-clearance", "parms.Rdata")) %>% 
+  mutate(pSC10 = as.numeric(0))
+
+pb <- progress_bar$new(format = "[:bar] :percent :eta", total = nrow(fits))
+for(i in 1:nrow(fits)) {
+  parms <- fits[i, -4]
+  
+  out <- as.data.frame(sc_model(parms))
+  fits$pSC10[i] <- out[11, "pSC"]
+  pb$tick()
+}
+
+fits %>% # Run check of 10y proportions (Range: 96.9 - 97.5)
+  select(pSC10) %>% 
+  summarise(val = median(pSC10, na.rm = TRUE),
+            lo = quantile(pSC10, 0.025, na.rm = TRUE),
+            hi = quantile(pSC10, 0.975, na.rm = TRUE)) 
+
+# 5.3 Long-term self-clearance rates
+target <- c(0.985, 0.995)
+time <- c(20, 50)
+
+# 5.3.1 Year 20
+scy20 <- fits %>% 
+  mutate(min = (1 / (time[1] - 10)) * log((1 - pSC10) / (1 - target[1])),
+         max = (1 / (time[1] - 10)) * log((1 - pSC10) / (1 - target[2]))) %>% 
+  rowwise() %>% 
+  mutate(gamma_d = median(runif(1, min, max))) %>% 
+  ungroup() %>% 
+  select(starts_with('gamma')) %>% 
+  as.data.frame()
+
+scy20 %>% # Run check of self-clearance rates
+  select(gamma_d) %>% 
+  summarise(val = median(gamma_d, na.rm = TRUE),
+            lo = quantile(gamma_d, 0.025, na.rm = TRUE),
+            hi = quantile(gamma_d, 0.975, na.rm = TRUE)) 
+
+export(scy20, here('scripts', 'self-clearance', 'parms_y20.Rdata'))
+
+# 5.3.2 Year 50
+scy50 <- fits %>% 
+  mutate(min = (1 / (time[2] - 10)) * log((1 - pSC10) / (1 - target[1])),
+         max = (1 / (time[2] - 10)) * log((1 - pSC10) / (1 - target[2]))) %>% 
+  rowwise() %>% 
+  mutate(gamma_d = median(runif(1, min, max))) %>% 
+  ungroup() %>% 
+  select(starts_with('gamma')) %>% 
+  as.data.frame()
+
+scy50 %>% # Run check of self-clearance rates
+  select(gamma_d) %>% 
+  summarise(val = median(gamma_d, na.rm = TRUE),
+            lo = quantile(gamma_d, 0.025, na.rm = TRUE),
+            hi = quantile(gamma_d, 0.975, na.rm = TRUE)) 
+
+export(scy50, here('scripts', 'self-clearance', 'parms_y50.Rdata'))
+
+rm(list = ls())
+
+# 6. Final SC run ==========
+# 6.1 Model
 sc_model <- function(parms, end_time = 50) {
   
   des <- function(time, state, parms) {
@@ -266,7 +360,7 @@ sc_model <- function(parms, end_time = 50) {
       gamma <- parms[, 'gamma_a']
     } else if (time >= 1 && time < 2) {
       gamma <- parms[, 'gamma_b']
-    } else if (time >= 2 && time < 9) {
+    } else if (time >= 2 && time < 10) {
       gamma <- parms[, 'gamma_c']
     } else {
       gamma <- parms[, 'gamma_d']
@@ -292,10 +386,9 @@ sc_model <- function(parms, end_time = 50) {
   return(df_out)
 }
 
-# 5.2  Model loops
-# fits <- import(here("scripts", "others", "parms_y20.Rdata"))
-# fits <- import(here("scripts", "others", "parms_y35.Rdata"))
-fits <- import(here("scripts", "others", "parms_y50.Rdata"))
+# 6.2  Model loops
+fits <- import(here("scripts", "self-clearance", "parms_y20.Rdata"))
+fits <- import(here("scripts", "self-clearance", "parms_y50.Rdata"))
 
 loop <- list()
 
@@ -315,28 +408,29 @@ run <- do.call("rbind", loop) %>%
             lo = quantile(values, 0.025, na.rm = TRUE),
             hi = quantile(values, 0.975, na.rm = TRUE)) 
 
-# export(run, here("scripts", "others", "runs_y20.Rdata"))
-# export(run, here("scripts", "others", "runs_y35.Rdata"))
-export(run, here("scripts", "others", "runs_y50.Rdata"))
+export(run, here("scripts", "self-clearance", "runs_y20.Rdata"))
+export(run, here("scripts", "self-clearance", "runs_y50.Rdata"))
 
 rm(list = ls())
 
 # 5.3 Plot
-# run <- import(here("scripts", "others", "runs_y20.Rdata"))
-# run <- import(here("scripts", "others", "runs_y35.Rdata"))
-run <- import(here("scripts", "others", "runs_y50.Rdata"))
+run <- import(here("scripts", "self-clearance", "runs_y20.Rdata"))
+run <- import(here("scripts", "self-clearance", "runs_y50.Rdata"))
 
-# tiff(here("scripts", "others", "cleared_y20.tiff"), width = 15, height = 3, units = 'in', res = 150)
-# tiff(here("scripts", "others", "cleared_y35.tiff"), width = 15, height = 3, units = 'in', res = 150)
-tiff(here("scripts", "others", "cleared_y50.tiff"), width = 15, height = 3, units = 'in', res = 150)
+targets <- data.frame(time = c(1, 2, 10, 20), # Change here for different final year
+                      var = c('pSC', 'pSC', 'pSC', 'pSC'),
+                      lo = c(0.801, 0.914, 0.969, 0.985),
+                      hi = c(0.817, 0.925, 0.975, 0.995))
+
+tiff(here("scripts", "self-clearance", "cleared_y20.tiff"), width = 15, height = 8, units = 'in', res = 150)
+tiff(here("scripts", "self-clearance", "cleared_y50.tiff"), width = 15, height = 8, units = 'in', res = 150)
 ggplot(filter(run, var == 'pSC')) +
-  geom_errorbar(data = targetsdb, aes(x = time, ymin = lo, ymax = hi), colour = '#000000', width = 0.5) + 
+  geom_errorbar(data = targets, aes(x = time, ymin = lo, ymax = hi), colour = '#000000', width = 0.5) + 
   geom_line(aes(x = time, y = val), colour = '#CE2931') +
-  geom_ribbon(aes(x= time, ymin = lo, ymax = hi), fill = '#CE2931', alpha = 0.2) +
+  geom_ribbon(aes(x = time, ymin = lo, ymax = hi), fill = '#CE2931', alpha = 0.2) +
   scale_y_continuous(labels = scales::percent_format(), expand = c(0.005, 0.005)) +
   scale_x_continuous(expand = c(0.005, 0.005)) +
   coord_cartesian(ylim = c(0.75, 1)) +
   labs(x = 'Years', y = 'Proportion self-cleared/recovered') +
   theme_minimal()
 dev.off()
-
