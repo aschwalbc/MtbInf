@@ -15,39 +15,46 @@ library(progress)
 # 1. Parameters ==========
 # 1.1 Baseline parameters
 parms = c(
-  gamma_a = 1.26, # Self-clearance Year 1
-  gamma_b = 1.26, # Self-clearance Year 2
-  gamma_c = 0.50) # Self-clearance Year 3-9
+  gamma_a = 1.66, # Self-clearance Year 1
+  gamma_b = 0.86, # Self-clearance Year 2
+  gamma_c = 0.20, # Self-clearance Year 3-9
+  gamma_d = 0.10) # Self-clearance Year 10+
 
 # 1.2 Parameter ranges
 ranges = list(
-  gamma_a = c(0,2), # Self-clearance Year 1
+  gamma_a = c(0,3), # Self-clearance Year 1
   gamma_b = c(0,2), # Self-clearance Year 2
-  gamma_c = c(0,2)) # Self-clearance Year 3-9
+  gamma_c = c(0,1), # Self-clearance Year 3-9
+  gamma_d = c(0,1)) # Self-clearance Year 10+
 
 # 2. Model ==========
-sc_model <- function(parms, end_time = 10) {
+sc_model <- function(parms, end_time = 50) {
   
   des <- function(time, state, parms) {
-    I <- state["I"]
     S <- state["S"]
+    Ia <- state["Ia"]
+    Ib <- state["Ib"]
+    Ic <- state["Ic"]
+    Id <- state["Id"]
     
-    # Determine gamma based on the current time
-    if (time >= 0 && time < 1) {
-      gamma <- parms["gamma_a"]
-    } else if (time >= 1 && time < 2) {
-      gamma <- parms["gamma_b"]
-    } else {
-      gamma <- parms["gamma_c"]
-    } 
+    gamma_a <- parms[['gamma_a']]
+    gamma_b <- parms[['gamma_b']]
+    gamma_c <- parms[['gamma_c']]
+    gamma_d <- parms[['gamma_d']]
+    kappa_ab <- 1 # Transition Y1 -> Y2
+    kappa_bc <- 1 # Transition Y2 -> Y3-9
+    kappa_cd <- 1/8 # Transition Y3-9 -> Y10+
     
-    dI <- -gamma * I
-    dS <- gamma * I
+    dS <- (gamma_a * Ia) + (gamma_b * Ib) + (gamma_c * Ic) + (gamma_d * Id)
+    dIa <- - (gamma_a * Ia) - (kappa_ab * Ia)
+    dIb <- - (gamma_b * Ib) + (kappa_ab * Ia) - (kappa_bc * Ib)
+    dIc <- - (gamma_c * Ic) + (kappa_bc * Ib) - (kappa_cd * Ic)
+    dId <- - (gamma_d * Id) + (kappa_cd * Ic)
     
-    return(list(c(dI, dS), pSC = S/1e5))
+    return(list(c(dS, dIa, dIb, dIc, dId), pSC = S/1e5))
   }
   
-  state <- c(I = 1e5, S = 0)
+  state <- c(S = 0, Ia = 1e5, Ib = 0, Ic = 0, Id = 0)
   times <- seq(from = 0, to = end_time, by = 1)
   out <- deSolve::ode(y = state, times = times, func = des, parms = parms)
   
@@ -61,6 +68,7 @@ sc_model <- function(parms, end_time = 10) {
 }
 
 head(as.data.frame(sc_model(parms))) # Test
+tail(as.data.frame(sc_model(parms))) # Test
 
 # 3. HMER ==========
 # 3.1 HMER-format results
@@ -76,7 +84,8 @@ hmer_res <- function(params, times, outputs) {
 targets <- list(
   pSC1 = c(0.801, 0.817),
   pSC2 = c(0.914, 0.925),
-  pSC10 = c(0.969, 0.975))
+  pSC10 = c(0.969, 0.975),
+  pSC20 = c(0.985, 0.995))
 
 targetsdb <- as.data.frame(t(as.data.frame(targets))) # Create dataframe with fitting targets
 targetsdb$var <- substr(rownames(targetsdb),1,3) # Create variable classification
@@ -123,8 +132,8 @@ invalid_diag <- list() # Empty list for invalid parameter sets after diagnostics
 invalid_bad <- list() # Empty list for invalid parameter sets after diagnostics and removal of bad emulators
 non_imp_pts <- list() # Empty list for non-implausible points generated per wave
 
-ini_LHS_train <- lhs::maximinLHS(10*length(ranges), length(ranges))
-ini_LHS_val <- lhs::maximinLHS(10*length(ranges), length(ranges))
+ini_LHS_train <- lhs::maximinLHS(20*length(ranges), length(ranges))
+ini_LHS_val <- lhs::maximinLHS(20*length(ranges), length(ranges))
 ini_LHS <- rbind(ini_LHS_train, ini_LHS_val)
 ini_pts <- setNames(data.frame(t(apply(ini_LHS, 1, function(x) x*unlist(lapply(ranges, function(x) x[2]-x[1])) + unlist(lapply(ranges, function(x) x[1]))))), names(ranges)) # Set random sets to create points
 rm(ini_LHS_train, ini_LHS_val, ini_LHS) # Clean objects
@@ -132,7 +141,7 @@ rm(ini_LHS_train, ini_LHS_val, ini_LHS) # Clean objects
 pb <- progress_bar$new(format = "[:bar] :percent :eta", total = nrow(ini_pts))
 tmp <- list()
 for (i in seq_len(nrow(ini_pts))) {
-  res <- t(apply(ini_pts[i,], 1, hmer_res, c(1, 2, 10), 'pSC'))
+  res <- t(apply(ini_pts[i,], 1, hmer_res, c(1, 2, 10, 20), 'pSC'))
   tmp[[i]] <- data.frame(res)[, names(targets)]
   pb$tick()  # Advance the progress bar
 }
@@ -176,13 +185,13 @@ invalid_bad[[1]] <- validation_diagnostics(ems[[1]], validation = wave_val[[1]],
 non_imp_pts[[1]] <- generate_new_design(ems[[1]], (10*length(ranges))*2, targets, verbose = TRUE) # Generate new points
 
 # 3.4 HMER loop runs
-for(i in 5001:5500) {
+for(i in 2:20) {
   w <- i # Update wave run
   
   pb <- progress_bar$new(format = "[:bar] :percent :eta", total = nrow(non_imp_pts[[w-1]]))
   tmp <- list()
   for (i in seq_len(nrow(non_imp_pts[[w-1]]))) {
-    res <- t(apply(non_imp_pts[[w-1]][i,], 1, hmer_res, c(1, 2, 10), 'pSC'))
+    res <- t(apply(non_imp_pts[[w-1]][i,], 1, hmer_res, c(1, 2, 10, 20), 'pSC'))
     tmp[[i]] <- data.frame(res)[, names(targets)]
     pb$tick()  # Advance the progress bar
   }
@@ -228,11 +237,12 @@ for(i in 5001:5500) {
 
 # 4. Calibration points ==========
 plaus_pts <- as.data.frame(do.call("rbind", wave_check))[1:length(parms)]
-plaus_pts <- sample_n(as.data.frame(do.call("rbind", wave_check))[1:length(parms)], size = 200000)
+plaus_pts <- sample_n(as.data.frame(do.call("rbind", wave_check))[1:length(parms)], size = 10000)
 
-export(plaus_pts, here("scripts", "self-clearance", "parms.Rdata"))
+export(plaus_pts, here("scripts", "self-clearance", "parms_y20.Rdata"))
+export(plaus_pts, here("scripts", "self-clearance", "parms_y50.Rdata"))
 
-quants <- c(0.025,0.5,0.975) # Set quantiles
+quants <- c(0.025, 0.5, 0.975) # Set quantiles
 parameters <- apply(plaus_pts, 2, quantile, probs = quants, na.rm = TRUE) # Set parameter quantiles
 t_parameters <- data.table::transpose(as.data.frame(parameters)) # Transpose parameters
 colnames(t_parameters) = rownames(parameters) # Set column names
@@ -240,42 +250,47 @@ rownames(t_parameters) = colnames(parameters) # Set row names
 parameters <- t_parameters # Rename parameters
 rm(t_parameters) # Clean objects
 
-parameters$parameter <- c("gamma_a", "gamma_b", "gamma_c")
+parameters$parameter <- c("gamma_a", "gamma_b", "gamma_c", "gamma_d")
 
 parameters[,c(1,2,3)] <- round(parameters[,c(1,2,3)], 3) # Round to 3 decimal places
 table <- data.frame(parameter = parameters$parameter, low  = parameters$`2.5%`, med = parameters$`50%`, hig = parameters$`97.5%`) # Output table
 
-export(table, here("scripts", "self-clearance", "sc_rates.csv")) # Save data frame
+export(table, here("scripts", "self-clearance", "sc_rates_y20.csv"))
+export(table, here("scripts", "self-clearance", "sc_rates_y50.csv"))
 
 rm(list = ls())
 
 # 5. SC run ==========
 # 5.1 Model
-sc_model <- function(parms, end_time = 10) {
+sc_model <- function(parms, end_time = 50) {
   
   des <- function(time, state, parms) {
-    I <- state["I"]
     S <- state["S"]
+    Ia <- state["Ia"]
+    Ib <- state["Ib"]
+    Ic <- state["Ic"]
+    Id <- state["Id"]
     
-    # Determine gamma based on the current time
-    if (time >= 0 && time < 1) {
-      gamma <- parms[, 'gamma_a']
-    } else if (time >= 1 && time < 2) {
-      gamma <- parms[, 'gamma_b']
-    } else {
-      gamma <- parms[, 'gamma_c']
-    } 
+    gamma_a <- parms[['gamma_a']]
+    gamma_b <- parms[['gamma_b']]
+    gamma_c <- parms[['gamma_c']]
+    gamma_d <- parms[['gamma_d']]
+    kappa_ab <- 1 # Transition Y1 -> Y2
+    kappa_bc <- 1 # Transition Y2 -> Y3-9
+    kappa_cd <- 1/8 # Transition Y3-9 -> Y10+
     
-    dI <- -gamma * I
-    dS <- gamma * I
+    dS <- (gamma_a * Ia) + (gamma_b * Ib) + (gamma_c * Ic) + (gamma_d * Id)
+    dIa <- - (gamma_a * Ia) - (kappa_ab * Ia)
+    dIb <- - (gamma_b * Ib) + (kappa_ab * Ia) - (kappa_bc * Ib)
+    dIc <- - (gamma_c * Ic) + (kappa_bc * Ib) - (kappa_cd * Ic)
+    dId <- - (gamma_d * Id) + (kappa_cd * Ic)
     
-    return(list(c(dI, dS), pSC = S/1e5))
+    return(list(c(dS, dIa, dIb, dIc, dId), pSC = S/1e5))
   }
   
-  state <- c(I = 1e5, S = 0)
+  state <- c(S = 0, Ia = 1e5, Ib = 0, Ic = 0, Id = 0)
   times <- seq(from = 0, to = end_time, by = 1)
-  out <- deSolve::ode(y = state, times = times, func = des, parms = parms,
-                      method = 'lsoda', rtol = 1e-6, atol = 1e-6)
+  out <- deSolve::ode(y = state, times = times, func = des, parms = parms)
   
   df_out <- as.data.frame(out)
   
@@ -287,106 +302,6 @@ sc_model <- function(parms, end_time = 10) {
 }
 
 # 5.2  Model loops
-fits <- import(here("scripts", "self-clearance", "parms.Rdata")) %>% 
-  mutate(pSC10 = as.numeric(0))
-
-pb <- progress_bar$new(format = "[:bar] :percent :eta", total = nrow(fits))
-for(i in 1:nrow(fits)) {
-  parms <- fits[i, -4]
-  
-  out <- as.data.frame(sc_model(parms))
-  fits$pSC10[i] <- out[11, "pSC"]
-  pb$tick()
-}
-
-fits %>% # Run check of 10y proportions (Range: 96.9 - 97.5)
-  select(pSC10) %>% 
-  summarise(val = median(pSC10, na.rm = TRUE),
-            lo = quantile(pSC10, 0.025, na.rm = TRUE),
-            hi = quantile(pSC10, 0.975, na.rm = TRUE)) 
-
-# 5.3 Long-term self-clearance rates
-target <- c(0.985, 0.995)
-time <- c(20, 50)
-
-# 5.3.1 Year 20
-scy20 <- fits %>% 
-  mutate(min = (1 / (time[1] - 10)) * log((1 - pSC10) / (1 - target[1])),
-         max = (1 / (time[1] - 10)) * log((1 - pSC10) / (1 - target[2]))) %>% 
-  rowwise() %>% 
-  mutate(gamma_d = median(runif(1, min, max))) %>% 
-  ungroup() %>% 
-  select(starts_with('gamma')) %>% 
-  as.data.frame()
-
-scy20 %>% # Run check of self-clearance rates
-  select(gamma_d) %>% 
-  summarise(val = median(gamma_d, na.rm = TRUE),
-            lo = quantile(gamma_d, 0.025, na.rm = TRUE),
-            hi = quantile(gamma_d, 0.975, na.rm = TRUE)) 
-
-export(scy20, here('scripts', 'self-clearance', 'parms_y20.Rdata'))
-
-# 5.3.2 Year 50
-scy50 <- fits %>% 
-  mutate(min = (1 / (time[2] - 10)) * log((1 - pSC10) / (1 - target[1])),
-         max = (1 / (time[2] - 10)) * log((1 - pSC10) / (1 - target[2]))) %>% 
-  rowwise() %>% 
-  mutate(gamma_d = median(runif(1, min, max))) %>% 
-  ungroup() %>% 
-  select(starts_with('gamma')) %>% 
-  as.data.frame()
-
-scy50 %>% # Run check of self-clearance rates
-  select(gamma_d) %>% 
-  summarise(val = median(gamma_d, na.rm = TRUE),
-            lo = quantile(gamma_d, 0.025, na.rm = TRUE),
-            hi = quantile(gamma_d, 0.975, na.rm = TRUE)) 
-
-export(scy50, here('scripts', 'self-clearance', 'parms_y50.Rdata'))
-
-rm(list = ls())
-
-# 6. Final SC run ==========
-# 6.1 Model
-sc_model <- function(parms, end_time = 50) {
-  
-  des <- function(time, state, parms) {
-    I <- state["I"]
-    S <- state["S"]
-    
-    # Determine gamma based on the current time
-    if (time >= 0 && time < 1) {
-      gamma <- parms[, 'gamma_a']
-    } else if (time >= 1 && time < 2) {
-      gamma <- parms[, 'gamma_b']
-    } else if (time >= 2 && time < 10) {
-      gamma <- parms[, 'gamma_c']
-    } else {
-      gamma <- parms[, 'gamma_d']
-    }
-    
-    dI <- -gamma * I
-    dS <- gamma * I
-    
-    return(list(c(dI, dS), pSC = S/1e5))
-  }
-  
-  state <- c(I = 1e5, S = 0)
-  times <- seq(from = 0, to = end_time, by = 1)
-  out <- deSolve::ode(y = state, times = times, func = des, parms = parms,
-                      method = 'lsoda', rtol = 1e-6, atol = 1e-6)
-  
-  df_out <- as.data.frame(out)
-  
-  if("pSC.S" %in% names(df_out)) {
-    names(df_out)[names(df_out) == 'pSC.S'] <- 'pSC'
-  }
-  
-  return(df_out)
-}
-
-# 6.2  Model loops
 fits <- import(here("scripts", "self-clearance", "parms_y20.Rdata"))
 fits <- import(here("scripts", "self-clearance", "parms_y50.Rdata"))
 
@@ -406,7 +321,7 @@ run <- do.call("rbind", loop) %>%
   group_by(time, var) %>% 
   summarise(val = median(values, na.rm = TRUE),
             lo = quantile(values, 0.025, na.rm = TRUE),
-            hi = quantile(values, 0.975, na.rm = TRUE)) 
+            hi = quantile(values, 0.975, na.rm = TRUE))
 
 export(run, here("scripts", "self-clearance", "runs_y20.Rdata"))
 export(run, here("scripts", "self-clearance", "runs_y50.Rdata"))
