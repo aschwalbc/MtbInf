@@ -1,6 +1,5 @@
-## Analysis code for Schwalb et al. 2024
-## Adapted from Houben & Dodd 2016
-## Distributed under CC BY 4.0
+## Analysis code for Mtb Inf Burden
+## Authors: A Schwalb
 ## RScript 01: DataPrep.R
 
 # Packages ==========
@@ -12,7 +11,7 @@ options(scipen = 999)
 
 # 0. Pre-processing curation ==========
 # 0.1 Filtering countries with population size <500k in 2022
-WPP <- import(here("data","sources","pop","WPP_Pop_1950-2100.csv"))
+WPP <- import(here("sources", "pop", "WPP_Pop_1950-2100.csv"))
 
 WPP <- WPP %>% # Population data
   select(iso3 = ISO3_code, year = Time, ageWPP = AgeGrp, pop = PopTotal) %>%
@@ -26,7 +25,7 @@ WPP <- WPP %>% # Population data
 
 # 1. Indirect ARI estimates ==========
 # 1.1 WHO TB prevalence/incidence ratio
-WHOr <- as.data.table(import(here("data","sources","who","WHOest_1990-2014.csv")))
+WHOr <- as.data.table(import(here("sources", "who", "WHOest_1990-2014.csv")))
 
 WHOr <- WHOr %>% 
   select(iso3, year, g_whoregion, starts_with('e_prev_num'), starts_with('e_inc_num')) %>% 
@@ -38,7 +37,7 @@ WHOr <- WHOr %>%
   summarise(previnc = mean(previnc, na.rm = TRUE))
 
 # 1.2 WHO TB incidence estimates
-WHO <- as.data.table(import(here("data","sources","who","WHOest_2000-2022.csv")))
+WHO <- as.data.table(import(here("sources", "who", "WHOest_2000-2022.csv")))
 
 WHO <- WHO %>% 
   select(iso3, year, e_pop_num, starts_with('e_inc_num'), starts_with('c_cdr'), starts_with('e_tbhiv_prct')) %>% 
@@ -112,9 +111,9 @@ HIV <- HIV %>%
 rm(mf, vf)
 
 # 1.3.4 Childhood TB
-WPPk <- as.data.table(import(here("data","sources","pop","WPP_Pop_1950-2100.csv")))
-KIDinc <- as.data.table(import(here("data","sources","others","TB_burden_age_sex.csv")))
-pKID <- as.data.table(import(here("data","sources","others","TBinc_kids_prop.csv"))) # Dodd et al. Lancet GH 2014
+WPPk <- as.data.table(import(here("sources", "pop", "WPP_Pop_1950-2100.csv")))
+KIDinc <- as.data.table(import(here("sources", "who", "WHOinc_2022.csv")))
+pKID <- as.data.table(import(here("sources", "others", "TBinc_pkid.csv"))) # Dodd et al. Lancet GH 2014
 
 WPPk <- WPPk %>% # Population <15yo in 2022
   select(iso3 = ISO3_code, year = Time, ageWPP = AgeGrp, pop = PopTotal) %>%
@@ -190,7 +189,7 @@ rm(stb, vstb, GTB)
 
 # 2. Direct ARI estimates ==========
 # 2.1 Cauthen et al.
-CAU <- as.data.table(import(here("data","sources","surveys","ari_cauthen.csv")))
+CAU <- as.data.table(import(here("sources", "survs", "ari_cauthen.csv")))
 
 CAU <- CAU %>% 
   filter(iso3 %in% WPP) %>% 
@@ -209,7 +208,7 @@ CAU <- CAU %>%
   as.data.table()
 
 # 2.2 Mtb surveys
-REV <- as.data.table(import(here("data","sources","surveys","ari_sysrev.csv")))
+REV <- as.data.table(import(here("sources", "survs", "ari_sysrev.csv")))
 
 REV <- REV %>% 
   filter(iso3 %in% WPP) %>% 
@@ -233,4 +232,6 @@ ARI <- ARI %>%
   filter(lari != -Inf)
 rm(CAU, REV)
 
-export(ARI, here("data","ari","ARI_rev.Rdata"))
+export(ARI, here("data", "ari", "ARI_rev.Rdata"))
+
+rm(list = ls())
