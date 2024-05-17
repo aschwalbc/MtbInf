@@ -6,7 +6,12 @@
 #SBATCH --mem=1G
 #SBATCH --chdir='.'
 
+eval "$(conda shell.bash hook)"
+conda activate mtb-env
+
 max_jobs=500
+
+Rscript prep.R "ARI_rev_mix_pop.fst"
 
 while read country
 do

@@ -9,5 +9,4 @@
 eval "$(conda shell.bash hook)"
 conda activate mtb-env
 
-FILE=$(echo 'mtbburden_hpc.R')
-Rscript $FILE $1 $2
+Rscript mtbburden_hpc.R $1 $2
