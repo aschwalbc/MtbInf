@@ -1,6 +1,5 @@
-## Analysis code for Schwalb et al. 2024
-## Adapted from Houben & Dodd 2016
-## Distributed under CC BY 4.0
+## Analysis code for Mtb Inf Burden
+## Authors: P Dodd
 ## RScript 02: GPReg.R
 
 # Packages ==========
@@ -13,7 +12,7 @@ library(MASS)
 library(Matrix)
 
 # 1. Data ==========
-ARI <- as.data.table(import(here("data","ari","ARI_rev.Rdata")))
+ARI <- as.data.table(import(here("data", "ari", "ARI_rev.Rdata")))
 
 iso <- unique(as.character(ARI$iso3)) # List unique ISO codes
 interp <- 1 # CHANGE HERE: Constant (0) or linear (1)
@@ -132,7 +131,7 @@ for(i in seq(1, length(iso))) {
   
   fyear <- 1950
   tdz <- db$year - fyear
-  tez <- 1950:2050 - fyear
+  tez <- 1950:2022 - fyear
   
   H <- getHtonly(tdz, n = interp)
   Hs <- getHtonly(tez, n = interp)
@@ -180,19 +179,19 @@ for(i in seq(1, length(iso))) {
 }
 
 # Reversion: Save output
-save(erw_full, file = here("data","gp","GP_rev.Rdata"))
-save(runsdf_full,file = here("data","gp","GPruns_rev.Rdata"))
+save(erw_full, file = here("data", "gp", "GP_rev.Rdata"))
+save(runsdf_full,file = here("data", "gp", "GPruns_rev.Rdata"))
 
 rm(list = ls())
 detach(package:MASS, unload = TRUE) # Detach due to issues with tidyverse "select" 
 
 # 4. GP plots ==========
-ARIhist <- as.data.table(import(here("data","gp","GP_rev.Rdata")))
-ARI <- as.data.table(import(here("data","ari","ARI_rev.Rdata")))
+ARIhist <- as.data.table(import(here("data", "gp", "GP_rev.Rdata")))
+ARI <- as.data.table(import(here("data", "ari", "ARI_rev.Rdata")))
 
 iso <- sort(unique(as.character(ARI$iso3)))
 
-pdf(here("plots","02_gpreg","logARI.pdf"), height = 6, width = 10)
+pdf(here("plots", "02_gplin_logari.pdf"), height = 5, width = 8)
 for(i in 1:length(iso)){
   print(iso[i])
   ari <- ARI %>%
@@ -203,19 +202,21 @@ for(i in 1:length(iso)){
     geom_line(hist, mapping = aes(x = year, y = lari), colour = "#FDB827") +
     geom_ribbon(hist, mapping = aes(x = year, ymin = lower, ymax = upper), fill = "#FDB827", alpha = 0.2) +
     geom_point(ari, mapping = aes(x = year, y = lari, colour = type, shape = type), show.legend = TRUE) +
-    scale_x_continuous(expand=c(0, 0), breaks = seq(1950, 2050, 25)) +
-    scale_y_continuous(expand=c(0, 0), breaks = seq(-10, 0, 2.5)) +
-    scale_colour_manual(values = c("prev" = "#CE1126", "surv" = "#003884")) +
-    scale_shape_manual(values = c("prev" = 16, "surv" = 17)) +
-    coord_cartesian(ylim = c(-10, 0), xlim = c(1950, 2050)) +
-    labs(title = iso[i], x = 'Year', y = 'log(ARI)') +
+    scale_x_continuous(expand=c(0.01, 0.01), breaks = seq(1950, 2025, 10)) +
+    scale_y_continuous(expand=c(0.01, 0.01), breaks = seq(-10, 0, 2.5)) +
+    scale_colour_manual(values = c("prev" = "#CE1126", "surv" = "#003884"),
+                        labels = c("prev" = "Prevalence estimates", "surv" = "Prevalence surveys")) +
+    scale_shape_manual(values = c("prev" = 16, "surv" = 17),
+                       labels = c("prev" = "Prevalence estimates", "surv" = "Prevalence surveys")) +
+    coord_cartesian(ylim = c(-10, 0), xlim = c(1950, 2022)) +
+    labs(title = iso[i], x = 'Year', y = 'Annual risk of infection (log)', colour = 'Type', shape = 'Type') +
     theme_bw() + 
     theme(legend.position = 'bottom')
   print(p)
 }
 dev.off()
 
-pdf(here("plots","02_gpreg","ARI.pdf"), height = 6, width = 10)
+pdf(here("plots", "02_gplin_ari.pdf"), height = 6, width = 10)
 for(i in 1:length(iso)){
   print(iso[i])
   ari <- ARI %>%
@@ -226,12 +227,14 @@ for(i in 1:length(iso)){
     geom_line(hist, mapping = aes(x = year, y = exp(lari)), colour = "#FDB827") +
     geom_ribbon(hist, mapping = aes(x = year, ymin = exp(lower), ymax = exp(upper)), fill = "#FDB827", alpha = 0.2) +
     geom_point(ari, mapping = aes(x = year, y = ari, colour = type, shape = type), show.legend = TRUE) +
-    scale_x_continuous(breaks = seq(1950, 2050, 25)) +
-    scale_y_continuous(labels = scales::label_percent(), breaks = seq(0, 0.15, 0.05)) +
-    scale_colour_manual(values = c("prev" = "#CE1126", "surv" = "#003884")) +
-    scale_shape_manual(values = c("prev" = 16, "surv" = 17)) +
-    coord_cartesian(ylim = c(0, 0.15), xlim = c(1950, 2050)) +
-    labs(title = iso[i], x = 'Year', y = 'ARI') +
+    scale_x_continuous(expand=c(0.01, 0.01), breaks = seq(1950, 2025, 25)) +
+    scale_y_continuous(expand=c(0.01, 0.01), labels = scales::label_percent(), breaks = seq(0, 0.15, 0.05)) +
+    scale_colour_manual(values = c("prev" = "#CE1126", "surv" = "#003884"),
+                        labels = c("prev" = "Prevalence estimates", "surv" = "Prevalence surveys")) +
+    scale_shape_manual(values = c("prev" = 16, "surv" = 17),
+                       labels = c("prev" = "Prevalence estimates", "surv" = "Prevalence surveys")) +
+    coord_cartesian(ylim = c(0, 0.15), xlim = c(1950, 2022)) +
+    labs(title = iso[i], x = 'Year', y = 'Annual risk of infection', colour = 'Type', shape = 'Type') +
     theme_bw() + 
     theme(legend.position = 'bottom')
   print(p)
