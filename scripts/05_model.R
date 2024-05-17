@@ -1,5 +1,5 @@
-## Analysis code for Schwalb et al. 2024
-## Distributed under CC BY 4.0
+## Analysis code for Mtb Inf Burden
+## Authors: A Schwalb and P Dodd
 ## RScript 05: Model.R
 
 # Packages ==========
@@ -12,140 +12,139 @@ library(data.table)
 
 # 1. Parameters ==========
 # 1.1 Age-specific parameters
-ARI <- import(here("data","ari","mARI_rev_mix_pop.Rdata"))
+ARI <- import(here("data", "ari", "mARI_rev_mix_pop.Rdata"))
 
 agp_0004 <- ARI %>% 
   filter(ageWPP == '00-04') %>% 
   mutate(lambda_0014 = ari) %>%
   rename(fp_0004 = fpop, theta = birthrate) %>% 
-  select(iso3,year,lambda_0014,theta,fp_0004)
+  select(iso3, year, lambda_0014 ,theta, fp_0004)
 
 agp_0509 <- ARI %>% 
   filter(ageWPP == '05-09') %>% 
   mutate(lambda_0014 = ari) %>%
   rename(fp_0509 = fpop) %>% 
-  select(iso3,year,lambda_0014,fp_0509)
+  select(iso3, year, lambda_0014, fp_0509)
 
 agp_1014 <- ARI %>% 
   filter(ageWPP == '10-14') %>% 
   mutate(lambda_0014 = ari) %>%
   rename(fp_1014 = fpop) %>% 
-  select(iso3,year,lambda_0014,fp_1014)
+  select(iso3, year, lambda_0014, fp_1014)
 
 agp_1519 <- ARI %>% 
   filter(ageWPP == '15-19') %>% 
   mutate(lambda_1544 = ari) %>%
   rename(fp_1519 = fpop) %>% 
-  select(iso3,year,lambda_1544,fp_1519)
+  select(iso3, year, lambda_1544, fp_1519)
 
 agp_2024 <- ARI %>% 
   filter(ageWPP == '20-24') %>% 
   mutate(lambda_1544 = ari) %>%
   rename(fp_2024 = fpop) %>% 
-  select(iso3,year,lambda_1544,fp_2024)
+  select(iso3, year, lambda_1544, fp_2024)
 
 agp_2529 <- ARI %>% 
   filter(ageWPP == '25-29') %>% 
   mutate(lambda_1544 = ari) %>%
   rename(fp_2529 = fpop) %>% 
-  select(iso3,year,lambda_1544,fp_2529)
+  select(iso3, year, lambda_1544, fp_2529)
 
 agp_3034 <- ARI %>% 
   filter(ageWPP == '30-34') %>% 
   mutate(lambda_1544 = ari) %>%
   rename(fp_3034 = fpop) %>% 
-  select(iso3,year,lambda_1544,fp_3034)
+  select(iso3, year, lambda_1544, fp_3034)
 
 agp_3539 <- ARI %>% 
   filter(ageWPP == '35-39') %>% 
   mutate(lambda_1544 = ari) %>%
   rename(fp_3539 = fpop) %>% 
-  select(iso3,year,lambda_1544,fp_3539)
+  select(iso3, year, lambda_1544, fp_3539)
 
 agp_4044 <- ARI %>% 
   filter(ageWPP == '40-44') %>% 
   mutate(lambda_1544 = ari) %>%
   rename(fp_4044 = fpop) %>% 
-  select(iso3,year,lambda_1544,fp_4044)
+  select(iso3, year, lambda_1544, fp_4044)
 
 agp_4549 <- ARI %>% 
   filter(ageWPP == '45-49') %>% 
   mutate(lambda_4500 = ari) %>%
   rename(fp_4549 = fpop) %>% 
-  select(iso3,year,lambda_4500,fp_4549)
+  select(iso3, year, lambda_4500, fp_4549)
 
 agp_5054 <- ARI %>% 
   filter(ageWPP == '50-54') %>% 
   mutate(lambda_4500 = ari) %>%
   rename(fp_5054 = fpop) %>% 
-  select(iso3,year,lambda_4500,fp_5054)
+  select(iso3, year, lambda_4500, fp_5054)
 
 agp_5559 <- ARI %>% 
   filter(ageWPP == '55-59') %>% 
   mutate(lambda_4500 = ari) %>%
   rename(fp_5559 = fpop) %>% 
-  select(iso3,year,lambda_4500,fp_5559)
+  select(iso3, year, lambda_4500, fp_5559)
 
 agp_6064 <- ARI %>% 
   filter(ageWPP == '60-64') %>% 
   mutate(lambda_4500 = ari) %>%
   rename(fp_6064 = fpop) %>% 
-  select(iso3,year,lambda_4500,fp_6064)
+  select(iso3, year, lambda_4500, fp_6064)
 
 agp_6569 <- ARI %>% 
   filter(ageWPP == '65-69') %>% 
   mutate(lambda_4500 = ari) %>%
   rename(fp_6569 = fpop) %>% 
-  select(iso3,year,lambda_4500,fp_6569)
+  select(iso3, year, lambda_4500, fp_6569)
 
 agp_7074 <- ARI %>% 
   filter(ageWPP == '70-74') %>% 
   mutate(lambda_4500 = ari) %>%
   rename(fp_7074 = fpop) %>% 
-  select(iso3,year,lambda_4500,fp_7074)
+  select(iso3, year, lambda_4500, fp_7074)
 
 agp_7579 <- ARI %>% 
   filter(ageWPP == '75-79') %>% 
   mutate(lambda_4500 = ari) %>%
   rename(fp_7579 = fpop) %>% 
-  select(iso3,year,lambda_4500,fp_7579)
+  select(iso3, year, lambda_4500, fp_7579)
 
 agp_8000 <- ARI %>% 
   filter(ageWPP == '80+') %>% 
   mutate(lambda_4500 = ari) %>%
   rename(fp_8000 = fpop) %>% 
-  select(iso3,year,lambda_4500,fp_8000)
+  select(iso3, year, lambda_4500, fp_8000)
 
 parameters <- agp_0004 %>% # Create parameter dataframe
-  left_join(agp_0509, by = c("iso3","year","lambda_0014")) %>% 
-  left_join(agp_1014, by = c("iso3","year","lambda_0014")) %>% 
-  left_join(agp_1519, by = c("iso3","year")) %>% 
-  left_join(agp_2024, by = c("iso3","year","lambda_1544")) %>% 
-  left_join(agp_2529, by = c("iso3","year","lambda_1544")) %>% 
-  left_join(agp_3034, by = c("iso3","year","lambda_1544")) %>% 
-  left_join(agp_3539, by = c("iso3","year","lambda_1544")) %>% 
-  left_join(agp_4044, by = c("iso3","year","lambda_1544")) %>% 
-  left_join(agp_4549, by = c("iso3","year")) %>% 
-  left_join(agp_5054, by = c("iso3","year","lambda_4500")) %>% 
-  left_join(agp_5559, by = c("iso3","year","lambda_4500")) %>% 
-  left_join(agp_6064, by = c("iso3","year","lambda_4500")) %>% 
-  left_join(agp_6569, by = c("iso3","year","lambda_4500")) %>% 
-  left_join(agp_7074, by = c("iso3","year","lambda_4500")) %>% 
-  left_join(agp_7579, by = c("iso3","year","lambda_4500")) %>% 
-  left_join(agp_8000, by = c("iso3","year","lambda_4500")) %>% 
+  left_join(agp_0509, by = c("iso3", "year", "lambda_0014")) %>% 
+  left_join(agp_1014, by = c("iso3", "year", "lambda_0014")) %>% 
+  left_join(agp_1519, by = c("iso3", "year")) %>% 
+  left_join(agp_2024, by = c("iso3", "year", "lambda_1544")) %>% 
+  left_join(agp_2529, by = c("iso3", "year", "lambda_1544")) %>% 
+  left_join(agp_3034, by = c("iso3", "year", "lambda_1544")) %>% 
+  left_join(agp_3539, by = c("iso3", "year", "lambda_1544")) %>% 
+  left_join(agp_4044, by = c("iso3", "year", "lambda_1544")) %>% 
+  left_join(agp_4549, by = c("iso3", "year")) %>% 
+  left_join(agp_5054, by = c("iso3", "year", "lambda_4500")) %>% 
+  left_join(agp_5559, by = c("iso3", "year", "lambda_4500")) %>% 
+  left_join(agp_6064, by = c("iso3", "year", "lambda_4500")) %>% 
+  left_join(agp_6569, by = c("iso3", "year", "lambda_4500")) %>% 
+  left_join(agp_7074, by = c("iso3", "year", "lambda_4500")) %>% 
+  left_join(agp_7579, by = c("iso3", "year", "lambda_4500")) %>% 
+  left_join(agp_8000, by = c("iso3", "year", "lambda_4500")) %>% 
   mutate(time = year - 1950) %>% 
-  select(iso3,time,starts_with("lambda"),starts_with("fp"),"theta")
+  select(iso3, time, starts_with("lambda"), starts_with("fp"), "theta")
 
 rm(list = ls(pattern = "^agp"))
 
 parameters <- as.data.table(parameters)
 
 # 1.2 Self-clearance rates
-gamma_y20 <- import(here("scripts", "self-clearance", "sc_rates_y20.csv"))
-gamma_y35 <- import(here("scripts", "self-clearance", "sc_rates_y35.csv"))
-gamma_y50 <- import(here("scripts", "self-clearance", "sc_rates_y50.csv"))
-gammas <- list('y20' = gamma_y20, 'y35' = gamma_y35, 'y50' = gamma_y50)
-rm(gamma_y20, gamma_y35, gamma_y50)
+gamma_y20 <- import(here("data", "sc", "sc_rates_y20.csv"))
+gamma_y50 <- import(here("data", "sc", "sc_rates_y50.csv"))
+gammas <- list('y20' = gamma_y20, 'y50' = gamma_y50)
+rm(gamma_y20, gamma_y50)
 
 # 2. Mtb Model ==========
 sis <- function(times, state, parms) {
@@ -167,10 +166,10 @@ sis <- function(times, state, parms) {
   S7579  <- state["S7579"]; I7579a  <- state["I7579a"]; I7579b  <- state["I7579b"]; I7579c  <- state["I7579c"]; I7579d  <- state["I7579d"]
   S8000  <- state["S8000"]; I8000a  <- state["I8000a"]; I8000b  <- state["I8000b"]; I8000c  <- state["I8000c"]; I8000d  <- state["I8000d"]
   
-  gamma_a <- gamma[gamma$parameter == 'gamma_a', 'med'] # Self-clearance rate Y1
-  gamma_b <- gamma[gamma$parameter == 'gamma_b', 'med'] # Self-clearance rate Y2
-  gamma_c <- gamma[gamma$parameter == 'gamma_c', 'med'] # Self-clearance rate Y3-9
-  gamma_d <- gamma[gamma$parameter == 'gamma_d', 'med']  # Self-clearance rate Y10+
+  gamma_a <- gamma[gamma$parms == 'gamma_a', 'val'] # Self-clearance rate Y1
+  gamma_b <- gamma[gamma$parms == 'gamma_b', 'val'] # Self-clearance rate Y2
+  gamma_c <- gamma[gamma$parms == 'gamma_c', 'val'] # Self-clearance rate Y3-9
+  gamma_d <- gamma[gamma$parms == 'gamma_d', 'val']  # Self-clearance rate Y10+
   kappa_ab <- 1 # Transition between infection years Y1 -> Y2
   kappa_bc <- 1 # Transition between infection years Y2 -> Y3-9
   kappa_cd <- 1/8 # Transition between infection years Y3-9 -> Y10+
@@ -299,7 +298,7 @@ sis <- function(times, state, parms) {
 }
 
 # 3. Model run ==========
-times <- seq(from = 0, to = 100, by = 1)
+times <- seq(from = 0, to = 72, by = 1)
 isos <- unique(ARI$iso3) # 171 countries
 
 for (g in 1:length(gammas)){
