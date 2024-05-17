@@ -37,6 +37,7 @@ data/gp/iso/
 data/gp/GPruns_rev.Rdata
 data/ari/ARI_rev_mix.Rdata
 data/ari/ARI_rev_mix_pop.Rdata
+data/ari/ARI_rev_mix_pop.fst
 data/mtb/isos_y20
 data/mtb/isos_y50
 docs/
