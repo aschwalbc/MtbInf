@@ -1,6 +1,5 @@
-## Analysis code for Schwalb et al. 2024
-## Adapted from Dodd et al. 2023
-## Distributed under CC BY 4.0
+## Analysis code for Mtb Inf Burden
+## Authors: P Dodd and A Schwalb
 ## RScript 03: Mixing.R
 
 # Packages ==========
@@ -13,7 +12,7 @@ library(viridis)
 
 # 1. Data prep ==========
 # 1.1 Mixing matrices
-MIX <- import(here("data","sources","others","Mixing.Rdata")) # Mixing matrices by Prem et al. 2021
+MIX <- import(here("sources", "others", "Mixing.Rdata")) # Mixing matrices by Prem et al. 2021
 
 MIX <- MIX %>% 
   filter(setting == 'overall' & location_contact == 'all') %>% # Filter for all contact locations (work, home, etc.)
@@ -23,17 +22,18 @@ MIX <- MIX %>%
          AI = case_when(AI == '0-4' ~ '00-04', AI == '5-9' ~ '05-09', TRUE ~ AI))
 
 # 1.2 WHO incidence per age
-WHOinc <- import(here("data","sources","who","WHOinc_2022.csv")) # WHO age and sex specific incidence
+WHOinc <- import(here("sources", "who", "WHOinc_2022.csv")) # WHO age and sex specific incidence
 
 WHOinc <- WHOinc %>%
   filter(risk_factor == 'all') %>% 
-  filter(!age_group %in% c('all', '0-14', '15plus', '18plus')) %>% # Filter out unnecessary age groups
+  filter(!age_group %in% c('all', '0-14', '15plus', '18plus')) %>% 
   group_by(iso3, year, ageWHO = age_group) %>%
   summarise(val = sum(best), lo = sum(lo), hi = sum(hi)) %>% # Summarise over sex
-  mutate(ageWHO = case_when(ageWHO == '0-4' ~ '00-04', ageWHO == '5-14' ~ '05-14', ageWHO == '65plus' ~ '65+', TRUE ~ ageWHO))
+  mutate(ageWHO = case_when(ageWHO == '0-4' ~ '00-04', ageWHO == '5-14' ~ '05-14', 
+                            ageWHO == '65plus' ~ '65+', TRUE ~ ageWHO))
 
 # 1.3 Age group populations
-WPP <- import(here("data","sources","others","WPP_2022.csv")) # World Population Prospects 2022
+WPP <- import(here("sources", "pop", "WPP_Pop_1950-2100.csv")) # World Population Prospects 2022
 
 WPP <- WPP %>% 
   select(iso3 = ISO3_code, year = Time, ageWPP = AgeGrp, pop = PopTotal) %>%
@@ -53,7 +53,7 @@ AGEkey <- data.frame(ageWPP = unique(WPP$ageWPP)) %>%
     ageWHO %in% c('15-24','25-34','35-44') ~ "15-44", ageWHO %in% c('45-54','55-64','65+') ~ "45+"))
 
 # 2. Relative TB incidence ==========
-WHOkey <- import(here("data","sources","who","WHOkey.csv")) %>% # WHO countries ISO codes and regions
+WHOkey <- import(here("sources", "who", "WHOkey.csv")) %>% # WHO countries ISO codes and regions
   select(iso3, reg = g_whoregion)
 
 WPP <- WPP %>%
@@ -84,16 +84,16 @@ WHOinc <- WHOinc %>%
   mutate(relpcTB = ifelse(is.na(relpcTB), relpcTB_reg, relpcTB)) %>% 
   within(rm(refpcTB, pcTB, relpcTB_reg))
 rm(WHOinc_reg)
-  
-F1 <- ggplot() +
-  geom_line(WHOinc, mapping = aes(x = ageARI, y = relpcTB, group = iso3)) +
+
+tiff(here("plots", "03_relinc.tiff"), width = 8, height = 6, units = 'in', res = 150)
+ggplot() +
   facet_wrap(~reg) +
+  geom_line(WHOinc, mapping = aes(x = ageARI, y = relpcTB, group = iso3)) +
   geom_hline(yintercept = 1, col = 2) +
   scale_y_sqrt() +
-  ylab('Square-root of relative TB incidence per capita') +
-  xlab('Age category') +
-  ggtitle('Relative TB incidence per capita (WHO estimates)') +
-  theme_light()
+  labs(y = 'Square-root of relative TB incidence per capita', x = 'Age category') +
+  theme_bw()
+dev.off()
 
 # 3. Mixing matrices ==========
 MIX <- MIX %>% 
@@ -110,14 +110,19 @@ MIXreg <- MIX %>%
   group_by(reg, ageAO, ageAI) %>%
   summarise(ctx = mean(ctx))
 
-F2 <- ggplot() +
+tiff(here("plots", "03_ctxpatterns.tiff"), width = 8, height = 6, units = 'in', res = 150)
+ggplot() +
   facet_wrap(~reg) +
   geom_tile(MIXreg, mapping = aes(x = ageAO, y = ageAI, fill = ctx)) +
-  scale_fill_viridis() +
-  theme(legend.position = 'bottom') +
-  xlab('Age of contactor') +
-  ylab('Age of contactee') +
-  ggtitle('Regional average contact patterns')
+  scale_fill_viridis(limits = c(0, 70), breaks = seq(0, 70, 10)) +
+  scale_y_discrete(expand = c(0, 0)) +
+  scale_x_discrete(expand = c(0, 0)) +
+  labs(x = 'Age of contactor', y = 'Age of contactee', fill = 'Average number of contacts') +
+  theme_bw() +
+  theme(legend.position = 'bottom', legend.key.size = unit(1, 'cm'), 
+        legend.text = element_text(size = 10), legend.title = element_text(size = 10),
+        legend.key.width = unit(2, 'cm'), legend.key.height = unit(0.5, 'cm'))
+dev.off()
 rm(MIXreg)
 
 # 4. Relative ARIs ========== 
@@ -148,13 +153,14 @@ relARI %>%
   group_by(ageARI) %>%
   summarise(relari = mean(relari, na.rm = TRUE))
 
-F3 <- ggplot() +
+tiff(here("plots", "03_relari.tiff"), width = 8, height = 6, units = 'in', res = 150)
+ggplot() +
   facet_wrap(~reg) +
   geom_line(relARI, mapping = aes(x = ageARI, y = relari, group = iso3)) +
   geom_hline(yintercept = 1, col = 2) +
-  xlab('Age') +
-  ylab('Relative ARI') +
+  labs(y = 'Relative annual risk of infection', x = 'Age category') +
   theme_bw()
+dev.off()
 
 # 5. Age-adjusted ARIs
 input <- c("GP_rev.Rdata", "GPruns_rev.Rdata")
