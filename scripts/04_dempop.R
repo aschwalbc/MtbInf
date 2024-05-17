@@ -7,6 +7,7 @@ library(data.table)
 library(rio)
 library(here)
 library(tidyverse)
+library(fst)
 
 # 1. Demographic data ==========
 # 1.1 Population
@@ -59,5 +60,7 @@ for (i in 1:length(input)) {
 
   export(ARI, here("data","ari",output[i]))
 }
+
+write.fst(ARI, here("data", "ari", "ARI_rev_mix_pop.fst"))
 
 rm(list=ls())
