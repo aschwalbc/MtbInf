@@ -1,9 +1,9 @@
 #!/bin/bash
 #SBATCH --job-name=mtbinf_q
 #SBATCH --output=./logs_q/%x_%A.log
-#SBATCH --time=02:00:00
+#SBATCH --time=05:00:00
 #SBATCH --account=ec232
-#SBATCH --mem=1G
+#SBATCH --mem=4G
 #SBATCH --chdir='.'
 
 eval "$(conda shell.bash hook)"
