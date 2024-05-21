@@ -205,11 +205,11 @@ for(i in 1:length(iso)){
     scale_x_continuous(expand=c(0.01, 0.01), breaks = seq(1950, 2025, 10)) +
     scale_y_continuous(expand=c(0.01, 0.01), breaks = seq(-10, 0, 2.5)) +
     scale_colour_manual(values = c("prev" = "#CE1126", "surv" = "#003884"),
-                        labels = c("prev" = "Prevalence estimates", "surv" = "Prevalence surveys")) +
+                        labels = c("prev" = "TB prevalence estimates", "surv" = "Immunoreactivity surveys")) +
     scale_shape_manual(values = c("prev" = 16, "surv" = 17),
-                       labels = c("prev" = "Prevalence estimates", "surv" = "Prevalence surveys")) +
+                       labels = c("prev" = "TB prevalence estimates", "surv" = "Immunoreactivity surveys")) +
     coord_cartesian(ylim = c(-10, 0), xlim = c(1950, 2022)) +
-    labs(title = iso[i], x = 'Year', y = 'Annual risk of infection (log)', colour = 'Type', shape = 'Type') +
+    labs(title = iso[i], x = 'Year', y = 'Annual risk of infection (log)', colour = 'Source', shape = 'Source') +
     theme_bw() + 
     theme(legend.position = 'bottom')
   print(p)
@@ -230,9 +230,9 @@ for(i in 1:length(iso)){
     scale_x_continuous(expand=c(0.01, 0.01), breaks = seq(1950, 2025, 25)) +
     scale_y_continuous(expand=c(0.01, 0.01), labels = scales::label_percent(), breaks = seq(0, 0.15, 0.05)) +
     scale_colour_manual(values = c("prev" = "#CE1126", "surv" = "#003884"),
-                        labels = c("prev" = "Prevalence estimates", "surv" = "Prevalence surveys")) +
+                        labels = c("prev" = "TB prevalence estimates", "surv" = "Immunoreactivity surveys")) +
     scale_shape_manual(values = c("prev" = 16, "surv" = 17),
-                       labels = c("prev" = "Prevalence estimates", "surv" = "Prevalence surveys")) +
+                       labels = c("prev" = "TB prevalence estimates", "surv" = "Immunoreactivity surveys")) +
     coord_cartesian(ylim = c(0, 0.15), xlim = c(1950, 2022)) +
     labs(title = iso[i], x = 'Year', y = 'Annual risk of infection', colour = 'Type', shape = 'Type') +
     theme_bw() + 
