@@ -12,7 +12,7 @@ suppressPackageStartupMessages({
 
 # Define scenario
 scenario <- "y20"
-cat(paste(Sys.time(), "- Running scenario:", scenario))
+cat(paste(Sys.time(), "- Running scenario:", scenario, "\n"))
 
 # Population data 
 POP <- import(here("proc", "WPP_Pop_1950-2100.csv")) %>% 
