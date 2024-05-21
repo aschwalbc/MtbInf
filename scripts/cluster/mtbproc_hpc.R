@@ -10,6 +10,10 @@ suppressPackageStartupMessages({
    options(dplyr.summarise.inform = FALSE)
 })
 
+# Define scenario
+scenario <- "y20"
+cat(paste(Sys.time(), "- Running scenario:", scenario))
+
 # Population data 
 POP <- import(here("proc", "WPP_Pop_1950-2100.csv")) %>% 
   select(iso3 = ISO3_code, year = Time, ageWPP = AgeGrp, pop = PopTotal) %>%
@@ -30,7 +34,7 @@ WHO <- as.data.table(import(here("proc", "WHOest_2000-2022.csv"))) %>%
   distinct()
 
 # Get all file names
-isos <- list.files(path = here("mtb_y20"), pattern = "\\.fst$", full.names = TRUE)
+isos <- list.files(path = here(paste0("mtb_", scenario)), pattern = "\\.fst$", full.names = TRUE)
 
 # Initialize an empty list to store the data tables
 mtbs <- list()
@@ -64,8 +68,8 @@ MTBglb <- MTB %>%
   summarise(val = median(values, na.rm = TRUE), 
             lo = quantile(values, 0.025, na.rm = TRUE), 
             hi = quantile(values, 0.975, na.rm = TRUE))
-export(MTBglb, here("outputs", "MTBglb.Rdata"))
-cat("Completed: Global estimates")
+export(MTBglb, here("outputs", paste0("mtb_", scenario), "MTBglb.Rdata"))
+cat(paste(Sys.time(), "- Completed: Global estimates\n"))
 
 MTBreg <- MTB %>% 
   left_join(WHO, by = c('iso3')) %>% 
@@ -85,8 +89,8 @@ MTBreg <- MTB %>%
   summarise(val = median(values, na.rm = TRUE), 
             lo = quantile(values, 0.025, na.rm = TRUE), 
             hi = quantile(values, 0.975, na.rm = TRUE))
-export(MTBreg, here("outputs", "MTBreg.Rdata"))
-cat("Completed: Regional estimates")
+export(MTBreg, here("outputs", paste0("mtb_", scenario), "MTBreg.Rdata"))
+cat(paste(Sys.time(), "- Completed: Regional estimates\n"))
 
 MTBiso <- MTB %>% 
   mutate(St = rowSums(across(matches("^S\\d{4}$")))) %>% 
@@ -101,8 +105,8 @@ MTBiso <- MTB %>%
   summarise(val = median(values, na.rm = TRUE), 
             lo = quantile(values, 0.025, na.rm = TRUE), 
             hi = quantile(values, 0.975, na.rm = TRUE))
-export(MTBiso, here("outputs", "MTBiso.Rdata"))
-cat("Completed: Country estimates")
+export(MTBiso, here("outputs", paste0("mtb_", scenario), "MTBiso.Rdata"))
+cat(paste(Sys.time(), "- Completed: Country estimates\n"))
 
 MTBage_pct <- MTB %>% 
   select(-starts_with('S')) %>% 
@@ -150,8 +154,8 @@ MTBage_pct <- MTB %>%
   summarise(val = median(values, na.rm = TRUE), 
             lo = quantile(values, 0.025, na.rm = TRUE), 
             hi = quantile(values, 0.975, na.rm = TRUE))
-export(MTBage_pct, here("outputs", "MTBage_pct.Rdata"))
-cat("Completed: Country estimates per age group (proportion)")
+export(MTBage_pct, here("outputs", paste0("mtb_", scenario), "MTBage_pct.Rdata"))
+cat(paste(Sys.time(), "- Completed: Country estimates per age group (proportion)\n"))
 
 MTBage_num <- MTB %>% 
   select(-starts_with('N')) %>% 
@@ -201,8 +205,8 @@ MTBage_num <- MTB %>%
   summarise(val = median(values, na.rm = TRUE), 
             lo = quantile(values, 0.025, na.rm = TRUE), 
             hi = quantile(values, 0.975, na.rm = TRUE))
-export(MTBage_num, here("outputs", "MTBage_num.Rdata"))
-cat("Completed: Country estimates per age group (absolute number)")
+export(MTBage_num, here("outputs", paste0("mtb_", scenario), "MTBage_num.Rdata"))
+cat(paste(Sys.time(), "- Completed: Country estimates per age group (absolute number)\n"))
 
 MTBglbkid <- MTB %>% 
   select(-starts_with('N')) %>% 
@@ -257,6 +261,5 @@ MTBglbkid <- MTB %>%
   summarise(val = median(values, na.rm = TRUE), 
             lo = quantile(values, 0.025, na.rm = TRUE), 
             hi = quantile(values, 0.975, na.rm = TRUE))
-export(MTBglbkid, here("outputs", "MTBglbkid.Rdata"))
-cat("Completed: Global estimates in children")
-
+export(MTBglbkid, here("outputs", paste0("mtb_", scenario), "MTBglbkid.Rdata"))
+cat(paste(Sys.time(), "- Completed: Global estimates in children\n"))
