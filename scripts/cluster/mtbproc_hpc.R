@@ -71,6 +71,7 @@ MTBglb <- MTB %>%
             hi = quantile(values, 0.975, na.rm = TRUE))
 export(MTBglb, here("outputs", paste0("mtb_", scenario), "MTBglb.Rdata"))
 cat(paste(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "- Completed: Global estimates\n"))
+rm(MTBglb)
 
 MTBglb_agepct <- MTB %>% 
   select(-starts_with('S')) %>% 
@@ -128,6 +129,7 @@ MTBglb_agepct <- MTB %>%
             hi = quantile(values, 0.975, na.rm = TRUE))
 export(MTBglb_agepct, here("outputs", paste0("mtb_", scenario), "MTBglb_agepct.Rdata"))
 cat(paste(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "- Completed: Global estimates per age group (proportion)\n"))
+rm(MTBglb_agepct)
 
 MTBglb_agenum <- MTB %>% 
   select(-starts_with('N')) %>% 
@@ -188,6 +190,7 @@ MTBglb_agenum <- MTB %>%
             hi = quantile(values, 0.975, na.rm = TRUE))
 export(MTBglb_agenum, here("outputs", paste0("mtb_", scenario), "MTBglb_agenum.Rdata"))
 cat(paste(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "- Completed: Global estimates per age group (absolute number)\n"))
+rm(MTBglb_agenum)
 
 MTBglb_kidpct <- MTB %>% 
   select(-starts_with('S')) %>% 
@@ -249,6 +252,7 @@ MTBglb_kidpct <- MTB %>%
             hi = quantile(values, 0.975, na.rm = TRUE))
 export(MTBglb_kidpct, here("outputs", paste0("mtb_", scenario), "MTBglb_kidpct.Rdata"))
 cat(paste(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "- Completed: Global estimates in children (proportion)\n"))
+rm(MTBglb_kidpct)
 
 MTBglb_kidnum <- MTB %>% 
   select(-starts_with('N')) %>% 
@@ -314,6 +318,7 @@ MTBglb_kidnum <- MTB %>%
             hi = quantile(values, 0.975, na.rm = TRUE))
 export(MTBglb_kidnum, here("outputs", paste0("mtb_", scenario), "MTBglb_kidnum.Rdata"))
 cat(paste(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "- Completed: Global estimates in children (absolute numbers)\n"))
+rm(MTBglb_kidnum)
 
 # Regional estimates ====
 MTBreg <- MTB %>% 
@@ -336,6 +341,7 @@ MTBreg <- MTB %>%
             hi = quantile(values, 0.975, na.rm = TRUE))
 export(MTBreg, here("outputs", paste0("mtb_", scenario), "MTBreg.Rdata"))
 cat(paste(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "- Completed: Regional estimates\n"))
+rm(MTBreg)
 
 MTBreg_agepct <- MTB %>% 
   select(-starts_with('S')) %>% 
@@ -393,6 +399,7 @@ MTBreg_agepct <- MTB %>%
             hi = quantile(values, 0.975, na.rm = TRUE))
 export(MTBreg_agepct, here("outputs", paste0("mtb_", scenario), "MTBreg_agepct.Rdata"))
 cat(paste(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "- Completed: Regional estimates per age group (proportion)\n"))
+rm(MTBreg_agepct)
 
 MTBreg_agenum <- MTB %>% 
   select(-starts_with('N')) %>% 
@@ -453,6 +460,7 @@ MTBreg_agenum <- MTB %>%
             hi = quantile(values, 0.975, na.rm = TRUE))
 export(MTBreg_agenum, here("outputs", paste0("mtb_", scenario), "MTBreg_agenum.Rdata"))
 cat(paste(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "- Completed: Regional estimates per age group (absolute number)\n"))
+rm(MTBreg_agenum)
 
 MTBreg_kidpct <- MTB %>% 
   select(-starts_with('S')) %>% 
@@ -514,6 +522,7 @@ MTBreg_kidpct <- MTB %>%
             hi = quantile(values, 0.975, na.rm = TRUE))
 export(MTBreg_kidpct, here("outputs", paste0("mtb_", scenario), "MTBreg_kidpct.Rdata"))
 cat(paste(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "- Completed: Regional estimates in children (proportion)\n"))
+rm(MTBreg_kidpct)
 
 MTBreg_kidnum <- MTB %>% 
   select(-starts_with('N')) %>% 
@@ -579,6 +588,7 @@ MTBreg_kidnum <- MTB %>%
             hi = quantile(values, 0.975, na.rm = TRUE))
 export(MTBreg_kidnum, here("outputs", paste0("mtb_", scenario), "MTBreg_kidnum.Rdata"))
 cat(paste(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "- Completed: Regional estimates in children (absolute numbers)\n"))
+rm(MTBreg_kidnum)
 
 # Country-level estimates ====
 MTBiso <- MTB %>% 
@@ -596,6 +606,7 @@ MTBiso <- MTB %>%
             hi = quantile(values, 0.975, na.rm = TRUE))
 export(MTBiso, here("outputs", paste0("mtb_", scenario), "MTBiso.Rdata"))
 cat(paste(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "- Completed: Country estimates\n"))
+rm(MTBiso)
 
 MTBiso_agepct <- MTB %>% 
   select(-starts_with('S')) %>% 
@@ -653,6 +664,7 @@ MTBiso_agepct <- MTB %>%
             hi = quantile(values, 0.975, na.rm = TRUE))
 export(MTBiso_agepct, here("outputs", paste0("mtb_", scenario), "MTBiso_agepct.Rdata"))
 cat(paste(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "- Completed: Country estimates per age group (proportion)\n"))
+rm(MTBiso_agepct)
 
 MTBiso_agenum <- MTB %>% 
   select(-starts_with('N')) %>% 
@@ -713,6 +725,7 @@ MTBiso_agenum <- MTB %>%
             hi = quantile(values, 0.975, na.rm = TRUE))
 export(MTBiso_agenum, here("outputs", paste0("mtb_", scenario), "MTBiso_agenum.Rdata"))
 cat(paste(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "- Completed: Country estimates per age group (absolute number)\n"))
+rm(MTBiso_agenum)
 
 MTBiso_kidpct <- MTB %>% 
   select(-starts_with('S')) %>% 
@@ -774,6 +787,7 @@ MTBiso_kidpct <- MTB %>%
             hi = quantile(values, 0.975, na.rm = TRUE))
 export(MTBiso_kidpct, here("outputs", paste0("mtb_", scenario), "MTBiso_kidpct.Rdata"))
 cat(paste(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "- Completed: Country estimates in children (proportion)\n"))
+rm(MTBiso_kidpct)
 
 MTBiso_kidnum <- MTB %>% 
   select(-starts_with('N')) %>% 
@@ -839,3 +853,4 @@ MTBiso_kidnum <- MTB %>%
             hi = quantile(values, 0.975, na.rm = TRUE))
 export(MTBiso_kidnum, here("outputs", paste0("mtb_", scenario), "MTBiso_kidnum.Rdata"))
 cat(paste(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "- Completed: Country estimates in children (absolute numbers)\n"))
+rm(MTBiso_kidnum)
