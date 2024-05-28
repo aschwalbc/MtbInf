@@ -24,8 +24,118 @@ for(i in files) {
   name <- tools::file_path_sans_ext(basename(i))
   assign(name, import(i))
 }
+rm(files, i, name)
 
-# 2. Plots ==========
+# 2. Tables ==========
+# 2.1 Table 1 - Proportion of population with viable Mtb infection
+mtbprop <- MTBglb %>% 
+  mutate(reg = 'GLOBAL') %>% 
+  bind_rows(MTBreg) %>% 
+  filter(year == 2022) %>% 
+  filter(var %in% c('pI', 'prI', 'rec')) %>% 
+  mutate(across(c(val, lo, hi), ~ round(. * 100, 1))) %>%
+  mutate(across(c(val, lo, hi), ~ sprintf("%.1f", .))) %>%
+  mutate(est = paste0(val, " (", lo, "-", hi, ")")) %>% 
+  select(reg, var, est) %>% 
+  pivot_wider(names_from = var, values_from = est) %>% 
+  select(reg, prI, pI, rec)
+
+mtbpropkid <- MTBglb_kidpct %>% 
+  mutate(reg = 'GLOBAL') %>% 
+  bind_rows(MTBreg_kidpct) %>% 
+  filter(year == 2022) %>% 
+  filter(agegp == '00-14') %>% 
+  mutate(across(c(val, lo, hi), ~ round(. * 100, 1))) %>%
+  mutate(across(c(val, lo, hi), ~ sprintf("%.1f", .))) %>%
+  mutate(est = paste0(val, " (", lo, "-", hi, ")")) %>% 
+  select(reg, var, est) %>% 
+  pivot_wider(names_from = var, values_from = est) %>% 
+  select(reg, pprI, ppI)
+
+mtbprop <- mtbprop %>% 
+  left_join(mtbpropkid, by = c('reg')) %>%
+  mutate(reg = factor(reg, levels = c("AFR", "AMR", "EMR", "EUR", "WPR", "SEA", "GLOBAL"))) %>% 
+  arrange(reg) %>% 
+  select(reg, prI, pprI, pI, ppI, rec) %>% 
+  rename('WHO region' = reg ,'Recent infection prevalence' = prI, 'Proportion in children (Rec)' = pprI,
+         'All infection prevalence' = pI, 'Proportion in children (All)' = ppI,
+         'Proportion recently infected' = rec)
+
+# 2.2 Table 2 - Number of individuals with viable Mtb infection
+mtbnum <- MTBglb %>% 
+  mutate(reg = 'GLOBAL') %>% 
+  bind_rows(MTBreg) %>% 
+  filter(year == 2022) %>% 
+  filter(var %in% c('It', 'rIt')) %>% 
+  mutate(across(c(val, lo, hi), ~ round(. / 1e6, 1))) %>%
+  mutate(across(c(val, lo, hi), ~ sprintf("%.1f", .))) %>%
+  mutate(est = paste0(val, " (", lo, "-", hi, ")")) %>% 
+  select(reg, var, est) %>% 
+  pivot_wider(names_from = var, values_from = est) %>% 
+  select(reg, rIt, It) 
+
+mtbnumkid <- MTBglb_kidnum %>% 
+  mutate(reg = 'GLOBAL') %>% 
+  bind_rows(MTBreg_kidnum) %>% 
+  filter(year == 2022) %>% 
+  filter(agegp == '00-14') %>% 
+  mutate(across(c(val, lo, hi), ~ round(. / 1e6, 1))) %>%
+  mutate(across(c(val, lo, hi), ~ sprintf("%.1f", .))) %>%
+  mutate(est = paste0(val, " (", lo, "-", hi, ")")) %>% 
+  select(reg, var, est) %>% 
+  pivot_wider(names_from = var, values_from = est) %>% 
+  select(reg, krIt = rI, kIt = tI)
+
+mtbnum <- mtbnum %>% 
+  left_join(mtbnumkid, by = c('reg')) %>%
+  mutate(reg = factor(reg, levels = c("AFR", "AMR", "EMR", "EUR", "WPR", "SEA", "GLOBAL"))) %>% 
+  arrange(reg) %>% 
+  select(reg, rIt, krIt, It, kIt) %>% 
+  rename('WHO region' = reg ,'Recent infections' = rIt, 'Recent infections in children' = krIt,
+         'All infections' = It, 'All infections in children' = kIt)
+
+# 2.3 Table S1 - Regional contribution to global viable Mtb infection burden
+mtbreg <- MTBreg %>% 
+  filter(year == 2022) %>% 
+  filter(var %in% c('regIt','regrIt')) %>% 
+  mutate(across(c(val, lo, hi), ~ round(. * 100, 1))) %>%
+  mutate(across(c(val, lo, hi), ~ sprintf("%.1f", .))) %>%
+  mutate(est = paste0(val, " (", lo, "-", hi, ")")) %>% 
+  select(reg, var, est) %>% 
+  pivot_wider(names_from = var, values_from = est) %>% 
+  mutate(reg = factor(reg, levels = c("AFR", "AMR", "EMR", "EUR", "WPR", "SEA", "GLOBAL"))) %>% 
+  select(reg, regrIt, regIt) %>% 
+  rename('WHO region' = reg ,'Recent infections' = regrIt, 'All infections' = regIt)
+
+# 2.4 Table S2 - Country-level estimates
+mtbisoprop <- MTBiso %>% 
+  filter(year == 2022) %>% 
+  filter(var %in% c('pI', 'prI', 'rI')) %>% 
+  mutate(across(c(val, lo, hi), ~ round(. * 100, 1))) %>%
+  mutate(across(c(val, lo, hi), ~ sprintf("%.1f", .))) %>%
+  mutate(est = paste0(val, " (", lo, "-", hi, ")")) %>% 
+  select(iso3, var, est) %>% 
+  pivot_wider(names_from = var, values_from = est) %>% 
+  select(iso3, prI, pI, rI) %>% 
+  arrange(desc(prI)) %>% 
+  rename('Country' = iso3 ,'Recent infection prevalence' = prI,
+         'All infection prevalence' = pI, 'Proportion recently infected' = rI) %>% 
+  slice_head(n = 20)
+
+mtbisonum <- MTBiso %>%
+  filter(year == 2022) %>%
+  filter(var %in% c('It', 'rIt')) %>%
+  mutate(across(c(val, lo, hi), ~ round(. / 1e6, 2))) %>%
+  mutate(across(c(val, lo, hi), ~ sprintf("%.1f", .))) %>%
+  mutate(est = paste0(val, " (", lo, "-", hi, ")")) %>%
+  select(iso3, var, est, val) %>%
+  pivot_wider(names_from = var, values_from = c(est, val), names_sep = "_") %>%
+  arrange(desc(as.numeric(val_rIt))) %>%
+  rename('Country' = iso3, 'Recent infections' = est_rIt, 'All infections' = est_It) %>%
+  select(Country, `Recent infections`, `All infections`) %>% 
+  slice_head(n = 20)
+
+# 3. Plots ==========
 iso <- unique(MTBiso$iso3)
 
 pdf(here("plots", paste0("07_inf_iso_", scenario, ".pdf")), height = 6, width = 10)
