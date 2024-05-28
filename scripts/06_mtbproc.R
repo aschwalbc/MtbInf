@@ -1,6 +1,6 @@
 ## Analysis code for Mtb Inf Burden
 ## Authors: A Schwalb 
-## RScript 06: Mtbburden.R
+## RScript 06: MtbProc.R
 
 # Packages ==========
 library(rio)
