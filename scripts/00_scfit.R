@@ -195,3 +195,41 @@ ggplot(filter(run, var != 'pSC')) +
   theme_bw() +
   theme(legend.position = 'bottom')
 dev.off()
+
+# 3.4 Scenarios 
+y20 <- import(here("data", "sc", "runs_y20.Rdata")) %>% 
+  mutate(scen = 'y20')
+
+y50 <- import(here("data", "sc", "runs_y50.Rdata")) %>% 
+  mutate(scen = 'y50')
+
+y20t <- data.frame(time = c(1, 2, 10, 20), 
+                   var = c('pSC', 'pSC', 'pSC', 'pSC'),
+                   lo = c(0.801, 0.914, 0.969, 0.985), 
+                   hi = c(0.817, 0.925, 0.975, 0.995)) %>% 
+  mutate(scen = 'y20')
+
+y50t <- data.frame(time = c(1, 2, 10, 50),
+                   var = c('pSC', 'pSC', 'pSC', 'pSC'),
+                   lo = c(0.801, 0.914, 0.969, 0.985),
+                   hi = c(0.817, 0.925, 0.975, 0.995)) %>% 
+  mutate(scen = 'y50')
+
+run <- rbind(y20, y50)
+targets <- rbind(y20t, y50t)
+
+label <- c("y20" = "Scenario Y20", "y50" = "Scenario Y50")
+
+tiff(here("plots", "00_fit.tiff"), width = 8, height = 6, units = 'in', res = 150)
+ggplot(filter(run, var == 'pSC')) +
+  facet_wrap(~scen, nrow = 2, labeller = labeller(scen = label)) +
+  geom_errorbar(data = targets, aes(x = time, ymin = lo, ymax = hi), colour = '#000000', width = 0.5) + 
+  geom_line(aes(x = time, y = val), colour = '#CE2931') +
+  geom_ribbon(aes(x = time, ymin = lo, ymax = hi), fill = '#CE2931', alpha = 0.2) +
+  scale_y_continuous(labels = scales::percent_format(), expand = c(0, 0)) +
+  scale_x_continuous(expand = c(0, 0)) +
+  coord_cartesian(ylim = c(0.75, 1)) +
+  labs(x = 'Years', y = 'Proportion self-cleared/recovered') +
+  theme_bw()
+dev.off()
+
