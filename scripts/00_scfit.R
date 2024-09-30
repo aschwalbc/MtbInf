@@ -162,38 +162,39 @@ export(run, here("data", "sc", "runs_y50.Rdata"))
 
 # 3. Plots ====
 # 3.1 Targets
-targets <- data.frame(time = c(1, 2, 10, 50), # CHANGE
+targets <- data.frame(time = c(1, 2, 10, 20), # CHANGE
                       var = c('pSC', 'pSC', 'pSC', 'pSC'),
                       lo = c(0.801, 0.914, 0.969, 0.985),
                       hi = c(0.817, 0.925, 0.975, 0.995))
 
 # 3.2 Fit plot
-tiff(here("plots", "00_fit_y20.tiff"), width = 8, height = 6, units = 'in', res = 150)
-tiff(here("plots", "00_fit_y50.tiff"), width = 8, height = 6, units = 'in', res = 150)
+png(here("plots", "00_fit_y20.png"), width = 8, height = 6, units = 'in', res = 1000)
+png(here("plots", "00_fit_y50.png"), width = 8, height = 6, units = 'in', res = 1000)
 ggplot(filter(run, var == 'pSC')) +
   geom_errorbar(data = targets, aes(x = time, ymin = lo, ymax = hi), colour = '#000000', width = 0.5) + 
   geom_line(aes(x = time, y = val), colour = '#CE2931') +
   geom_ribbon(aes(x = time, ymin = lo, ymax = hi), fill = '#CE2931', alpha = 0.2) +
   scale_y_continuous(labels = scales::percent_format(), expand = c(0, 0)) +
   scale_x_continuous(expand = c(0, 0)) +
-  coord_cartesian(ylim = c(0.75, 1)) +
-  labs(x = 'Years', y = 'Proportion self-cleared/recovered') +
-  theme_bw()
+  coord_cartesian(ylim = c(0.75, 1), xlim = c(0, 51)) +
+  labs(x = 'Years', y = 'Percentage self-cleared or recovered') +
+  theme_bw() + 
+  theme(text = element_text(family = "Open Sans"))
 dev.off()
 
 # 3.3 Proportion self-cleared
-tiff(here("plots", "00_scfit_y20.tiff"), width = 8, height = 6, units = 'in', res = 150)
-tiff(here("plots", "00_scfit_y50.tiff"), width = 8, height = 6, units = 'in', res = 150)
+png(here("plots", "00_scfit_y20.png"), width = 8, height = 6, units = 'in', res = 1000)
+png(here("plots", "00_scfit_y50.png"), width = 8, height = 6, units = 'in', res = 1000)
 ggplot(filter(run, var != 'pSC')) +
   geom_bar(aes(x = time, y = val, fill = var), stat = "identity", position = "fill") +
   scale_y_continuous(labels = scales::percent_format(), expand = c(0, 0)) +
   scale_x_continuous(expand = c(0, 0)) +
   scale_fill_manual(values = c('Ia' = '#710301', 'Ib' = '#C52104', 'Ic' = '#F28705', 'Id' = '#F2B807', 'S' = '#CCCCCC'),
-                    labels = c('Ia' = 'Inf Y1', 'Ib' = 'Inf Y2', 'Ic' = 'Inf Y3-9', 'Id' = 'Inf Y10', 'S' = 'Susceptible')) +
+                    labels = c('Ia' = 'Infected Y1', 'Ib' = 'Infected Y2', 'Ic' = 'Infected Y3-9', 'Id' = 'Infected Y10+', 'S' = 'Not infected')) +
   coord_cartesian(ylim = c(0.80, 1)) +
-  labs(y = 'Proportion', x = 'Years', fill = 'Compartment') +
+  labs(y = 'Proportion of cohort', x = 'Years', fill = 'Compartment') +
   theme_bw() +
-  theme(legend.position = 'bottom')
+  theme(legend.position = 'bottom', text = element_text(family = "Open Sans"))
 dev.off()
 
 # 3.4 Scenarios 
@@ -218,9 +219,9 @@ y50t <- data.frame(time = c(1, 2, 10, 50),
 run <- rbind(y20, y50)
 targets <- rbind(y20t, y50t)
 
-label <- c("y20" = "Scenario Y20", "y50" = "Scenario Y50")
+label <- c("y20" = "High self-clearance scenario", "y50" = "Low self-clearance scenario")
 
-tiff(here("plots", "00_fit.tiff"), width = 8, height = 6, units = 'in', res = 150)
+png(here("plots", "00_fit.png"), width = 8, height = 6, units = 'in', res = 1000)
 ggplot(filter(run, var == 'pSC')) +
   facet_wrap(~scen, nrow = 2, labeller = labeller(scen = label)) +
   geom_errorbar(data = targets, aes(x = time, ymin = lo, ymax = hi), colour = '#000000', width = 0.5) + 
@@ -229,7 +230,8 @@ ggplot(filter(run, var == 'pSC')) +
   scale_y_continuous(labels = scales::percent_format(), expand = c(0, 0)) +
   scale_x_continuous(expand = c(0, 0)) +
   coord_cartesian(ylim = c(0.75, 1)) +
-  labs(x = 'Years', y = 'Proportion self-cleared/recovered') +
-  theme_bw()
+  labs(x = 'Years', y = 'Percentage self-cleared or recovered') +
+  theme_bw() +
+  theme(text = element_text(family = "Open Sans"))
 dev.off()
 
