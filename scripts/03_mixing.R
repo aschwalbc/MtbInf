@@ -85,14 +85,16 @@ WHOinc <- WHOinc %>%
   within(rm(refpcTB, pcTB, relpcTB_reg))
 rm(WHOinc_reg)
 
-tiff(here("plots", "03_relinc.tiff"), width = 8, height = 6, units = 'in', res = 150)
+png(here("plots", "03_relinc.png"), width = 8, height = 6, units = 'in', res = 1000)
 ggplot() +
   facet_wrap(~reg) +
   geom_line(WHOinc, mapping = aes(x = ageARI, y = relpcTB, group = iso3)) +
   geom_hline(yintercept = 1, col = 2) +
-  scale_y_sqrt() +
-  labs(y = 'Square-root of relative TB incidence per capita', x = 'Age category') +
-  theme_bw()
+  scale_y_sqrt(breaks = c(1, 10, 40, 80, 120, 160)) +
+  scale_x_discrete(labels = c("0-15", "15-45", "45+")) +
+  labs(y = 'Square-root of relative TB incidence per capita', x = 'Age group (Years)') +
+  theme_bw() +
+  theme(text = element_text(family = "Open Sans"))
 dev.off()
 
 # 3. Mixing matrices ==========
@@ -110,18 +112,19 @@ MIXreg <- MIX %>%
   group_by(reg, ageAO, ageAI) %>%
   summarise(ctx = mean(ctx))
 
-tiff(here("plots", "03_ctxpatterns.tiff"), width = 8, height = 6, units = 'in', res = 150)
+png(here("plots", "03_ctxpatterns.png"), width = 8, height = 6, units = 'in', res = 1000)
 ggplot() +
   facet_wrap(~reg) +
   geom_tile(MIXreg, mapping = aes(x = ageAO, y = ageAI, fill = ctx)) +
   scale_fill_viridis(limits = c(0, 70), breaks = seq(0, 70, 10)) +
-  scale_y_discrete(expand = c(0, 0)) +
-  scale_x_discrete(expand = c(0, 0)) +
-  labs(x = 'Age of contactor', y = 'Age of contactee', fill = 'Average number of contacts') +
+  scale_y_discrete(labels = c("0-15", "15-45", "45+"), expand = c(0, 0)) +
+  scale_x_discrete(labels = c("0-15", "15-45", "45+"), expand = c(0, 0)) +
+  labs(x = 'Age of individual', y = 'Age of contact', fill = 'Average number of contacts') +
   theme_bw() +
   theme(legend.position = 'bottom', legend.key.size = unit(1, 'cm'), 
-        legend.text = element_text(size = 10), legend.title = element_text(size = 10),
-        legend.key.width = unit(2, 'cm'), legend.key.height = unit(0.5, 'cm'))
+        legend.text = element_text(size = 10), legend.title = element_text(size = 10, margin = margin(b = 15, r = 5)),
+        legend.key.width = unit(2, 'cm'), legend.key.height = unit(0.5, 'cm'),
+        text = element_text(family = "Open Sans"))
 dev.off()
 rm(MIXreg)
 
@@ -153,16 +156,19 @@ relARI %>%
   group_by(ageARI) %>%
   summarise(relari = mean(relari, na.rm = TRUE))
 
-tiff(here("plots", "03_relari.tiff"), width = 8, height = 6, units = 'in', res = 150)
+png(here("plots", "03_relari.png"), width = 8, height = 6, units = 'in', res = 1000)
 ggplot() +
   facet_wrap(~reg) +
   geom_line(relARI, mapping = aes(x = ageARI, y = relari, group = iso3)) +
   geom_hline(yintercept = 1, col = 2) +
-  labs(y = 'Relative annual risk of infection', x = 'Age category') +
-  theme_bw()
+  scale_y_continuous(breaks = c(1, 2.5, 5.0, 7.5, 10.0)) +
+  scale_x_discrete(labels = c("0-15", "15-45", "45+")) +
+  labs(y = 'Relative annual risk of infection', x = 'Age group (Years)') +
+  theme_bw() +
+  theme(text = element_text(family = "Open Sans"))
 dev.off()
 
-# 5. Age-adjusted ARIs
+# 5. Age-adjusted ARIs ========== 
 input <- c("GP_rev.Rdata", "GPruns_rev.Rdata")
 output <- c("mARI_rev_mix.Rdata", "ARI_rev_mix.Rdata")
 
