@@ -44,3 +44,5 @@ docs/
 ppts/
 plots/
 pub
+data/ari/GP_norev.Rdata
+data/ari/GPruns_norev.Rdata
