@@ -14,6 +14,12 @@ library(Matrix)
 # 1. Data ==========
 ARI <- as.data.table(import(here("data", "ari", "ARI_rev.Rdata")))
 
+# ARI dataset (Houben and Dodd PMED 2016)
+# ARI <- as.data.table(import(here("data", "ari", "ARI_PMED.Rdata"))) %>% 
+#   filter(iso3 %in% c("AGO", "BGD", "BRA", "CAF", "CHN", "COD", "COG", "PRK", "ETH", "GAB",
+#                      "IND", "IDN", "KEN", "LSO", "LBR", "MNG", "MOZ", "MMR", "NAM", "NGA", 
+#                      "PAK", "PNG", "PHL", "SLE", "ZAF", "THA", "UGA", "TZA", "VNM", "ZMB"))
+
 iso <- unique(as.character(ARI$iso3)) # List unique ISO codes
 interp <- 1 # CHANGE HERE: Constant (0) or linear (1)
 
