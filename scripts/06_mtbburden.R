@@ -97,7 +97,7 @@ tab2 <- tab2 %>%
          'Proportion recently infected' = rec)
 rm(tab2ex)
 
-# 2.3 Table S4 - Regional distribution of global viable Mtb infection burden
+# 2.3 Table S4 - Adjusted ARIs for top 30 high burden countries
 top30 <- c("AGO", "BGD", "BRA", "CAF", "CHN", "COD", "COG", "PRK", "ETH", "GAB",
            "IND", "IDN", "KEN", "LSO", "LBR", "MNG", "MOZ", "MMR", "NAM", "NGA", 
            "PAK", "PNG", "PHL", "SLE", "ZAF", "THA", "UGA", "TZA", "VNM", "ZMB")
@@ -110,11 +110,45 @@ tabs4 <- import(here("data", "ari", "ARI_rev_mix_CI.Rdata")) %>%
   mutate(across(c(val, lo, hi), ~ sprintf("%.1f", .))) %>%
   mutate(est = paste0(val, " (", lo, "-", hi, ")")) %>% 
   select(iso3, ageARI, est) %>% 
-  pivot_wider(names_from = ageARI, values_from = est) 
-  rename('Country' = iso3 ,'Age group' = ageARI, 'ARI' = est) %>% 
-  
-# 2.4 Table S5 - Regional distribution of global viable Mtb infection burden
-tabs5 <- MTBreg %>% 
+  pivot_wider(names_from = ageARI, values_from = est) %>% 
+  rename('Country' = iso3)
+
+# 2.3 Table S5 - Adjusted ARIs for top 30 high burden countries
+pmed <- import(here("data", "gp", "GP_PMED.Rdata")) %>% 
+  filter(year == 2014) %>% 
+  rename(val = lari, lo = lower, hi = upper) %>% 
+  mutate(across(c(val, lo, hi), ~ exp(.))) %>%
+  mutate(across(c(val, lo, hi), ~ round(. * 100, 1))) %>%
+  mutate(across(c(val, lo, hi), ~ sprintf("%.1f", .))) %>%
+  mutate(est = paste0(val, " (", lo, "-", hi, ")")) %>% 
+  select(iso3, est)
+
+tabs5 <- import(here("data", "ari", "ARI_rev_mix_CI.Rdata")) %>% 
+  filter(year == 2014, iso3 %in% top30) %>% 
+  rename(val = lari, lo = lower, hi = upper) %>% 
+  mutate(across(c(val, lo, hi), ~ exp(.))) %>%
+  mutate(across(c(val, lo, hi), ~ round(. * 100, 1))) %>%
+  mutate(across(c(val, lo, hi), ~ sprintf("%.1f", .))) %>%
+  mutate(est = paste0(val, " (", lo, "-", hi, ")")) %>% 
+  select(iso3, ageARI, est) %>% 
+  pivot_wider(names_from = ageARI, values_from = est) %>% 
+  left_join(pmed, by = c('iso3')) %>% 
+  select(iso3, est, `00-14`, `15-44`, `45+`) %>% 
+  rename(pmed = est)
+
+tabs5 %>% 
+  mutate(across(c(pmed, `00-14`, `15-44`, `45+`), ~ as.numeric(str_extract(., "^[0-9.]+")))) %>% 
+  mutate(across(c(pmed, `00-14`, `15-44`, `45+`), ~ . / pmed)) %>% 
+  summarise(across(c(pmed, `00-14`, `15-44`, `45+`), 
+                   list(val = ~ sprintf("%.1f", round(median(.), 1)),
+                        lo = ~ sprintf("%.1f", round(quantile(., 0.25), 1)),
+                        hi = ~ sprintf("%.1f", round(quantile(., 0.75), 1))))) %>% 
+  mutate(across(ends_with("_val"), ~ paste0(., " (", get(sub("val", "lo", cur_column())), "-", get(sub("val", "hi", cur_column())), ")"))) %>%
+  select(pmed_val, `00-14_val`, `15-44_val`, `45+_val`) %>% 
+  rename(pmed = pmed_val, `00-14` = `00-14_val`, `15-44` = `15-44_val`, `45+` = `45+_val`)
+
+# 2.4 Table S6 - Regional distribution of global viable Mtb infection burden
+tabs6 <- MTBreg %>% 
   filter(year == 2022) %>% 
   filter(var %in% c('regIt','regrIt')) %>% 
   mutate(across(c(val, lo, hi), ~ round(. * 100, 1))) %>%
@@ -126,8 +160,8 @@ tabs5 <- MTBreg %>%
   select(reg, regrIt, regIt) %>% 
   rename('WHO region' = reg ,'Recent infections' = regrIt, 'All infections' = regIt)
 
-# 2.5 Table S6 - Country-level estimates (absolute number)
-tabs6 <- MTBiso %>%
+# 2.5 Table S7 - Country-level estimates (absolute number)
+tabs7 <- MTBiso %>%
   filter(year == 2022) %>%
   filter(var %in% c('It', 'rIt')) %>%
   mutate(across(c(val, lo, hi), ~ round(. / 1e6, 2))) %>%
@@ -140,8 +174,8 @@ tabs6 <- MTBiso %>%
   select(Country, `Recent infections`, `All infections`) %>% 
   slice_head(n = 10)
 
-# 2.6 Table S7 - Country-level estimates (proportion)
-tabs7 <- MTBiso %>% 
+# 2.6 Table S8 - Country-level estimates (proportion)
+tabs8 <- MTBiso %>% 
   filter(year == 2022) %>% 
   filter(var %in% c('prI', 'pI', 'rec')) %>% 
   mutate(across(c(val, lo, hi), ~ round(. * 100, 1))) %>%
@@ -289,7 +323,7 @@ ggplot(filter(MTBreg_agepct, year == 2022, var != 'rec')) +
         axis.title.x = element_text(vjust = -2), text = element_text(family = "Open Sans"))
 dev.off()
 
-# 4. Extra plots ==========
+# 4. Extras ==========
 # 4.1 Absolute number of infections by age group
 png(here("plots", paste0("06x_reginf_agegpnum_", scenario, ".png")), width = 10, height = 6, units = 'in', res = 200)
 ggplot(filter(MTBreg_agenum, year == 2022, var != 'tI')) +
@@ -335,3 +369,69 @@ ggplot(filter(MTBiso, year == 2022, var %in% c('It', 'rIt'), iso3 %in% top10)) +
   theme(legend.position = 'bottom',
         text = element_text(family = "Open Sans"))
 dev.off()  
+
+# 4.4 Top 10 countries with highest prevalence of Mtb infections
+prev10 <- c('PRK', 'PHL', 'KHM', 'TLS', 'MMR', 'IDN', 'MNG', 'GAB', 'BGD', 'LAO')
+png(here("plots", paste0("06x_infpct_topiso_", scenario, ".png")), width = 9, height = 4.5, units = 'in', res = 1000)
+ggplot(filter(MTBiso, year == 2022, var %in% c('pI', 'prI'), iso3 %in% prev10)) +
+  geom_col(aes(x = reorder(iso3, -val * (var == 'pI'), FUN = sum), y = val, fill = var), position = "identity") +
+  scale_fill_manual(values = c("pI" = "#900C3F", "prI" = "#FF5733"),
+                    labels = c("pI" = "All infections", "prI" = "Recent infections")) +
+  scale_y_continuous(labels = scales::label_percent(), breaks = seq(0, 0.25, 0.05)) +
+  labs(x = NULL, y = expression('Prevalence of viable '*italic('Mtb')*' infection'), fill = 'Type') +
+  theme_bw() +
+  theme(legend.position = 'bottom',
+        text = element_text(family = "Open Sans"))
+dev.off()  
+
+# 4.5 WHO regional map
+reg <- ne_countries(scale = 'small', type = 'countries', returnclass = 'sf') %>% 
+  left_join(MTBiso %>% filter(year == 2022, var == 'prI'), by = c("iso_a3_eh" = "iso3"))
+
+colours <- c('AMR' = "#E56E5A", 'EUR' = "#4C6A9C", 'EMR' = "#BC8E5A",
+             'AFR' = "#A2559C", 'WPR' = "#B16215", 'SEA' = "#3B8E1E")
+
+png(here("plots",paste0("06_regmap.png")), width = 10, height = 5, units = 'in', res = 1000)
+ggplot(data = reg) +
+  geom_sf(aes(fill = reg)) +
+  scale_fill_manual(values = colours, na.value = "#D3D3D3", na.translate = TRUE) +
+  theme_void() +
+  theme(legend.position = 'none', text = element_text(family = "Open Sans")) +
+  coord_sf(crs = "+proj=robin +lon_0=0")
+dev.off()
+
+# 4.4 Country-level estimates
+num <- MTBiso %>%
+  filter(year == 2022) %>%
+  filter(var %in% c('It', 'rIt')) %>%
+  mutate(across(c(val, lo, hi), ~ round(./1e3) * 1e3)) %>% 
+  mutate(across(c(val, lo, hi), ~ scales::comma(., accuracy = 1))) %>% 
+  mutate(est = paste0(val, " (", lo, "-", hi, ")")) %>%
+  select(iso3, var, est, val) %>%
+  pivot_wider(names_from = var, values_from = c(est, val), names_sep = "_") %>%
+  arrange(iso3) %>%
+  rename('Country' = iso3, 'Recent infections' = est_rIt, 'All infections' = est_It) %>%
+  select(Country, `Recent infections`, `All infections`)
+
+numk <- MTBiso_kidnum %>%
+  filter(year == 2022) %>%
+  filter(agegp == '00-14', var == 'rI') %>% 
+  mutate(across(c(val, lo, hi), ~ round(./1e3) * 1e3)) %>% 
+  mutate(across(c(val, lo, hi), ~ scales::comma(., accuracy = 1))) %>%
+  mutate(est = paste0(val, " (", lo, "-", hi, ")")) %>% 
+  select(iso3, var, est) %>% 
+  pivot_wider(names_from = var, values_from = est, names_sep = "_") %>%
+  arrange(iso3) %>%
+  rename('Country' = iso3, 'Recent infections in children' = rI)
+
+pct <- MTBiso %>%
+  filter(year == 2022) %>% 
+  filter(var %in% c('pI', 'prI')) %>% 
+  mutate(across(c(val, lo, hi), ~ round(. * 100, 2))) %>%
+  mutate(across(c(val, lo, hi), ~ sprintf("%.2f", .))) %>%
+  mutate(est = paste0(val, " (", lo, "-", hi, ")")) %>%
+  select(iso3, var, est, val) %>%
+  pivot_wider(names_from = var, values_from = c(est, val), names_sep = "_") %>%
+  arrange(iso3) %>%
+  rename('Country' = iso3, 'Recent infections' = est_prI, 'All infections' = est_pI) %>%
+  select(Country, `Recent infections`, `All infections`)
