@@ -48,3 +48,5 @@ data/gp/GP_norev.Rdata
 data/gp/GPruns_norev.Rdata
 data/ari/ARI_norev.Rdata
 data/ari/ARI_rev_mix_CI.Rdata
+figs/
+journal/
