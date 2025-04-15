@@ -235,3 +235,18 @@ ggplot(filter(run, var == 'pSC')) +
   theme(text = element_text(family = "Open Sans"))
 dev.off()
 
+# 4. Table ====
+# 4.1 Self-clearance rates by year
+schi <- import(here("data", "sc", "parms_y20.Rdata")) %>% 
+  pivot_longer(cols = everything(), names_to = "var", values_to = "val") %>%
+  group_by(var) %>%
+  summarise(med = round(median(val, na.rm = TRUE), 2),
+            lo = round(quantile(val, 0.025, na.rm = TRUE), 2),
+            hi = round(quantile(val, 0.975, na.rm = TRUE), 2))
+
+sclo <- import(here("data", "sc", "parms_y50.Rdata")) %>% 
+  pivot_longer(cols = everything(), names_to = "var", values_to = "val") %>%
+  group_by(var) %>%
+  summarise(med = round(median(val, na.rm = TRUE), 2),
+            lo = round(quantile(val, 0.025, na.rm = TRUE), 2),
+            hi = round(quantile(val, 0.975, na.rm = TRUE), 2))
