@@ -10,40 +10,79 @@ library(tidyverse)
 library(data.table)
 library(rstan)
 library(expm)
+library(binom)
+library(boot)
 
+# 0. Uncertainty ====
+# 0.1 Raw data uncertainty 
+unc <- import(here("data", "sc", "pnas.csv")) %>% # Horton et al. PNAS 2023
+  mutate(times = round(x.months / 12, 1), 
+         d.of.y = ifelse(Transition %in% c("Submin", "Clinmin", "Clinmin_clin", 
+                                           "Submin_sub", "InfminI", "Infmin_infI"),
+                         round(d.of.y * 3 / 4), d.of.y)) %>%
+  select(n = n.of.y, d = d.of.y, times, type = `data type`,
+         model = model.transition, reps = repeats) %>% 
+  mutate(type = case_when(type == "time to event" ~ "time",
+                          type == "cross sectional" ~ "cross")) %>% 
+  mutate(n_w = round(n / reps), d_w = round(d / reps), prop = n_w / d_w) %>%
+  bind_cols(binom.confint(.$n_w, .$d_w, method = "wilson")[, c("lower", "upper")]) %>% 
+  mutate(loglo = logit(lower), loghi = logit(upper)) %>% 
+  mutate(logspread = loghi - loglo) %>% 
+  summarise(logspread = median(logspread, na.rm = TRUE)) %>% 
+  pull(logspread)
+  
 # 1. Calibration ====
 # 1.1 Compile model
 mod <- stan_model(here("data", "sc", "expm.stan"))
 
 # 1.2 Calibration targets
-# 1.2.1 Target midpoints:
-m1 <- c(0.801 + 0.817)/2
-m2 <- c(0.914 + 0.925)/2
-m10 <- c(0.969 + 0.975)/2
-m10plus <- c(0.985 + 0.995)/2
+# 1.2.1 Target midpoints
+m1 <- 0.809
+m2 <- 0.919
+m10 <- 0.972
+m10plus <- 0.990
 
-# 1.2.2 Target SDs
-s1 <- - c(0.801 - 0.817)/3.92
-s2 <- - c(0.914 - 0.925)/3.92
-s10 <- - c(0.969 - 0.975)/3.92
-s10plus <- - c(0.985 - 0.995)/3.92
+# 1.2.2 Target logit midpoints
+lgm1 <- logit(0.809)
+lgm2 <- logit(0.919)
+lgm10 <- logit(0.972)
+lgm10plus <- logit(0.990)
 
-# 1.2.3 Group data
-D <- list(t1 = 1,t2 = 2,t3 = 10, t4 = 50, # CHANGE
+# 1.2.3 Target bounds
+lo1 <- inv.logit(lgm1 - (unc / 2))
+up1 <- inv.logit(lgm1 + (unc / 2))
+lo2 <- inv.logit(lgm2 - (unc / 2))
+up2 <- inv.logit(lgm2 + (unc / 2))
+lo10 <- inv.logit(lgm10 - (unc / 2))
+up10 <- inv.logit(lgm10 + (unc / 2))
+lo10plus <- inv.logit(lgm10plus - (unc / 2))
+up10plus <- inv.logit(lgm10plus + (unc / 2))
+ 
+# 1.2.4 Target SDs
+s1 <- - c(lo1 - up1)/3.92
+s2 <- - c(lo2 - up2)/3.92
+s10 <- - c(lo10 - up10)/3.92
+s10plus <- - c(lo10plus - up10plus)/3.92
+
+# 1.2.5 Set scenario
+# High self-clearance scenario = 20
+# Low self-clearance scenario = 50
+scen <- 20 # CHANGE HERE
+
+# 1.2.6 Group data
+D <- list(t1 = 1,t2 = 2,t3 = 10, t4 = scen,
           m1 = m1, m2 = m2, m3 = m10, m4 = m10plus,
           s1 = s1, s2 = s2, s3 = s10, s4 = s10plus)
 
 # 1.3 Sampling
-C <- sampling(mod, data = D, iter = 40000) # Adjust iterations to get n_eff > 10K
+C <- sampling(mod, data = D, iter = 15000) # Adjust iterations to get n_eff > 10K
 print(C) # Check
-export(C, here("data", "sc", "mcmc_y20.rds"))
-export(C, here("data", "sc", "mcmc_y50.rds"))
+export(C, here("data", "sc", paste0("mcmc_y", as.character(scen),".rds")))
 
 # 1.3.1 Extract parameters
 S <- extract(C, pars = c("gamma_a", "gamma_b", "gamma_c", "gamma_d"))
 fits <- as.data.table(do.call("cbind", S))
-export(fits, here("data", "sc", "parms_y20.Rdata"))
-export(fits, here("data", "sc", "parms_y50.Rdata"))
+export(fits, here("data", "sc", paste0("parms_y", as.character(scen),".Rdata")))
 
 parms <- apply(fits, 2, quantile, probs = c(0.025, 0.5, 0.975), na.rm = TRUE)
 t_parms <- data.table::transpose(as.data.frame(parms))
@@ -53,8 +92,7 @@ parms <- t_parms
 parms$parms <- c("gamma_a", "gamma_b", "gamma_c", "gamma_d")
 parms[,c(1,2,3)] <- round(parms[,c(1,2,3)], 3)
 parms <- data.frame(parms = parms$parms, val = parms$`50%`, lo  = parms$`2.5%`, hi = parms$`97.5%`)
-export(parms, here("data", "sc", "sc_rates_y20.csv"))
-export(parms, here("data", "sc", "sc_rates_y50.csv"))
+export(parms, here("data", "sc", paste0("sc_rates_y", as.character(scen),".csv")))
 
 # 2. Fit checks ====
 # 2.1 Parameters
@@ -64,7 +102,7 @@ kappa_cd <- 1/8 # Transition Y3-9 -> Y10+
 
 # 2.2 Matrix exponents approach
 get.targets <- function(gamma_a, gamma_b, gamma_c, gamma_d,
-                        kappa_ab, kappa_bc, kappa_cd, Y10plus = 20) { # CHANGE
+                        kappa_ab, kappa_bc, kappa_cd, Y10plus = scen) {
   state0 <- c(S = 0, Ia = 1, Ib = 0, Ic = 0, Id = 0)
   R <- matrix(
     c(0, gamma_a, gamma_b, gamma_c, gamma_d,    # S
@@ -86,7 +124,7 @@ for(i in 1:100) {
   A[i, ] <- get.targets(gamma_a = S$gamma_a[i], gamma_b = S$gamma_b[i], 
                         gamma_c = S$gamma_c[i], gamma_d = S$gamma_d[i],
                         kappa_ab = kappa_ab, kappa_bc = kappa_bc, 
-                        kappa_cd = kappa_cd, Y10plus = 20) # CHANGE
+                        kappa_cd = kappa_cd, Y10plus = scen) 
 }
 
 # 2.2.2 Target comparison
@@ -157,34 +195,31 @@ run <- do.call("rbind", loop) %>%
          lo = ifelse(lo < 0, 0, lo),
          hi = ifelse(hi < 0, 0, hi))
 
-export(run, here("data", "sc", "runs_y20.Rdata"))
-export(run, here("data", "sc", "runs_y50.Rdata"))
+export(run, here("data", "sc", paste0("runs_y", as.character(scen),".Rdata")))
 
 # 3. Plots ====
 # 3.1 Targets
-targets <- data.frame(time = c(1, 2, 10, 20), # CHANGE
+targets <- data.frame(time = c(1, 2, 10, scen),
                       var = c('pSC', 'pSC', 'pSC', 'pSC'),
-                      lo = c(0.801, 0.914, 0.969, 0.985),
-                      hi = c(0.817, 0.925, 0.975, 0.995))
+                      lo = c(lo1, lo2, lo10, lo10plus),
+                      hi = c(up1, up2, up10, up10plus))
 
 # 3.2 Fit plot
-png(here("plots", "00_fit_y20.png"), width = 8, height = 6, units = 'in', res = 1000)
-png(here("plots", "00_fit_y50.png"), width = 8, height = 6, units = 'in', res = 1000)
+png(here("plots", paste0("00_fit_y", as.character(scen),".png")), width = 8, height = 6, units = 'in', res = 1000)
 ggplot(filter(run, var == 'pSC')) +
-  geom_errorbar(data = targets, aes(x = time, ymin = lo, ymax = hi), colour = '#000000', width = 0.5) + 
+  geom_errorbar(data = targets, aes(x = time, ymin = lo, ymax = hi), colour = '#000000', width = 1) + 
   geom_line(aes(x = time, y = val), colour = '#CE2931') +
   geom_ribbon(aes(x = time, ymin = lo, ymax = hi), fill = '#CE2931', alpha = 0.2) +
   scale_y_continuous(labels = scales::percent_format(), expand = c(0, 0)) +
   scale_x_continuous(expand = c(0, 0)) +
-  coord_cartesian(ylim = c(0.75, 1), xlim = c(0, 51)) +
+  coord_cartesian(ylim = c(0.60, 1), xlim = c(0, 51)) +
   labs(x = 'Years', y = 'Percentage self-cleared or recovered') +
   theme_bw() + 
   theme(text = element_text(family = "Open Sans"))
 dev.off()
 
 # 3.3 Proportion self-cleared
-png(here("plots", "00_scfit_y20.png"), width = 8, height = 6, units = 'in', res = 1000)
-png(here("plots", "00_scfit_y50.png"), width = 8, height = 6, units = 'in', res = 1000)
+png(here("plots", paste0("00_scfit_y", as.character(scen),".png")), width = 8, height = 6, units = 'in', res = 1000)
 ggplot(filter(run, var != 'pSC')) +
   geom_bar(aes(x = time, y = val, fill = var), stat = "identity", position = "fill") +
   scale_y_continuous(labels = scales::percent_format(), expand = c(0, 0)) +
@@ -206,14 +241,14 @@ y50 <- import(here("data", "sc", "runs_y50.Rdata")) %>%
 
 y20t <- data.frame(time = c(1, 2, 10, 20), 
                    var = c('pSC', 'pSC', 'pSC', 'pSC'),
-                   lo = c(0.801, 0.914, 0.969, 0.985), 
-                   hi = c(0.817, 0.925, 0.975, 0.995)) %>% 
+                   lo = c(lo1, lo2, lo10, lo10plus),
+                   hi = c(up1, up2, up10, up10plus)) %>% 
   mutate(scen = 'y20')
 
 y50t <- data.frame(time = c(1, 2, 10, 50),
                    var = c('pSC', 'pSC', 'pSC', 'pSC'),
-                   lo = c(0.801, 0.914, 0.969, 0.985),
-                   hi = c(0.817, 0.925, 0.975, 0.995)) %>% 
+                   lo = c(lo1, lo2, lo10, lo10plus),
+                   hi = c(up1, up2, up10, up10plus)) %>% 
   mutate(scen = 'y50')
 
 run <- rbind(y20, y50)
@@ -224,12 +259,12 @@ label <- c("y20" = "High self-clearance scenario", "y50" = "Low self-clearance s
 png(here("plots", "00_fit.png"), width = 8, height = 6, units = 'in', res = 1000)
 ggplot(filter(run, var == 'pSC')) +
   facet_wrap(~scen, nrow = 2, labeller = labeller(scen = label)) +
-  geom_errorbar(data = targets, aes(x = time, ymin = lo, ymax = hi), colour = '#000000', width = 0.5) + 
+  geom_errorbar(data = targets, aes(x = time, ymin = lo, ymax = hi), colour = '#000000', width = 1) + 
   geom_line(aes(x = time, y = val), colour = '#CE2931') +
   geom_ribbon(aes(x = time, ymin = lo, ymax = hi), fill = '#CE2931', alpha = 0.2) +
   scale_y_continuous(labels = scales::percent_format(), expand = c(0, 0)) +
   scale_x_continuous(expand = c(0, 0)) +
-  coord_cartesian(ylim = c(0.75, 1)) +
+  coord_cartesian(ylim = c(0.60, 1)) +
   labs(x = 'Years', y = 'Percentage self-cleared or recovered') +
   theme_bw() +
   theme(text = element_text(family = "Open Sans"))
