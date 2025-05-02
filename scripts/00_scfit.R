@@ -13,6 +13,11 @@ library(expm)
 library(binom)
 library(boot)
 
+# X. Scenario
+# High self-clearance scenario = 20
+# Low self-clearance scenario = 50
+scen <- 20 # CHANGE HERE
+
 # 0. Uncertainty ====
 # 0.1 Raw data uncertainty 
 unc <- import(here("data", "sc", "pnas.csv")) %>% # Horton et al. PNAS 2023
@@ -43,10 +48,10 @@ m10 <- 0.972
 m10plus <- 0.990
 
 # 1.2.2 Target logit midpoints
-lgm1 <- logit(0.809)
-lgm2 <- logit(0.919)
-lgm10 <- logit(0.972)
-lgm10plus <- logit(0.990)
+lgm1 <- logit(m1)
+lgm2 <- logit(m2)
+lgm10 <- logit(m10)
+lgm10plus <- logit(m10plus)
 
 # 1.2.3 Target bounds
 lo1 <- inv.logit(lgm1 - (unc / 2))
@@ -64,12 +69,7 @@ s2 <- - c(lo2 - up2)/3.92
 s10 <- - c(lo10 - up10)/3.92
 s10plus <- - c(lo10plus - up10plus)/3.92
 
-# 1.2.5 Set scenario
-# High self-clearance scenario = 20
-# Low self-clearance scenario = 50
-scen <- 20 # CHANGE HERE
-
-# 1.2.6 Group data
+# 1.2.5 Group data
 D <- list(t1 = 1,t2 = 2,t3 = 10, t4 = scen,
           m1 = m1, m2 = m2, m3 = m10, m4 = m10plus,
           s1 = s1, s2 = s2, s3 = s10, s4 = s10plus)

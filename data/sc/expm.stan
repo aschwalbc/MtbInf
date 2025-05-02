@@ -22,7 +22,7 @@ transformed parameters{
                       [0,-gamma_a-kappa_ab,0,0,0],         //Ia
                       [0,kappa_ab,-gamma_b-kappa_bc,0,0],  //Ib
                       [0,0,kappa_bc,-gamma_c-kappa_cd,0],  //Ic
-                      [0,0,0,kappa_cd,-gamma_d]];           //Id
+                      [0,0,0,kappa_cd,-gamma_d]];          //Id
     //full states
     vector[5] Y0 = [0,1,0,0,0]';
     vector[5] Y1 = matrix_exp(t1*R) * Y0;
