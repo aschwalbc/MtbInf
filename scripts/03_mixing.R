@@ -88,7 +88,7 @@ rm(WHOinc_reg)
 png(here("plots", "03_relinc.png"), width = 8, height = 6, units = 'in', res = 1000)
 ggplot() +
   facet_wrap(~reg) +
-  geom_line(WHOinc, mapping = aes(x = ageARI, y = relpcTB, group = iso3)) +
+  geom_line(WHOinc, mapping = aes(x = ageARI, y = relpcTB, group = iso3), alpha = 0.5) +
   geom_hline(yintercept = 1, col = 2) +
   scale_y_sqrt(breaks = c(1, 10, 40, 80, 120, 160)) +
   scale_x_discrete(labels = c("0-15", "15-45", "45+")) +
@@ -159,9 +159,9 @@ relARI %>%
 png(here("plots", "03_relari.png"), width = 8, height = 6, units = 'in', res = 1000)
 ggplot() +
   facet_wrap(~reg) +
-  geom_line(relARI, mapping = aes(x = ageARI, y = relari, group = iso3)) +
+  geom_line(relARI, mapping = aes(x = ageARI, y = relari, group = iso3), alpha = 0.5) +
   geom_hline(yintercept = 1, col = 2) +
-  scale_y_continuous(breaks = c(1, 2.5, 5.0, 7.5, 10.0)) +
+  scale_y_continuous(breaks = seq(1, 5, 1), limits = c(1, 5)) +
   scale_x_discrete(labels = c("0-15", "15-45", "45+")) +
   labs(y = 'Relative annual risk of infection', x = 'Age group (Years)') +
   theme_bw() +
