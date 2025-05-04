@@ -150,16 +150,20 @@ rm(WHOinc, MIX)
 
 relARIreg <- relARI %>%
   group_by(reg, ageARI) %>%
-  summarise(relari = mean(relari, na.rm = TRUE))
+  summarise(med = median(relari, na.rm = TRUE),
+            lo = quantile(relari, 0.025), hi = quantile(relari, 0.975))
+print(relARIreg) # Table S3
 
-relARI %>%
+relARI %>% # Table S3
   group_by(ageARI) %>%
-  summarise(relari = mean(relari, na.rm = TRUE))
+  summarise(med = median(relari, na.rm = TRUE),
+            lo = quantile(relari, 0.025), hi = quantile(relari, 0.975))
 
 png(here("plots", "03_relari.png"), width = 8, height = 6, units = 'in', res = 1000)
 ggplot() +
   facet_wrap(~reg) +
   geom_line(relARI, mapping = aes(x = ageARI, y = relari, group = iso3), alpha = 0.5) +
+  geom_line(relARIreg, mapping = aes(x = ageARI, y = med, group = reg), colour = "#FF0000") +
   geom_hline(yintercept = 1, col = 2) +
   scale_y_continuous(breaks = seq(1, 5, 1), limits = c(1, 5)) +
   scale_x_discrete(labels = c("0-15", "15-45", "45+")) +
