@@ -202,11 +202,9 @@ for (i in 1:length(input)) {
   export(ARI, here("data", "ari", output[i]))
 }
 
-ARI_CI <- ARI %>% 
+ARI_UI <- ARI %>% 
   group_by(year, iso3, reg, ageARI) %>% 
-  summarise(med = round(median(ari) * 1e2, 2), 
-            lo = round(quantile(ari, 0.025) * 1e2, 2),
-            hi = round(quantile(ari, 0.975) * 1e2, 2))
-export(ARI_CI, here("data", "ari", "ARI_rev_mix_CI.Rdata"))
+  summarise(med = median(ari), lo = quantile(ari, 0.025), hi = quantile(ari, 0.975))
+export(ARI_UI, here("data", "ari", "ARI_rev_mix_UI.Rdata"))
 
 rm(list=ls())
