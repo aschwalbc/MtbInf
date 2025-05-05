@@ -203,8 +203,9 @@ for (i in 1:length(input)) {
 }
 
 ARI_UI <- ARI %>% 
+  mutate(logari = log(ari)) %>% 
   group_by(year, iso3, reg, ageARI) %>% 
-  summarise(med = median(ari), lo = quantile(ari, 0.025), hi = quantile(ari, 0.975))
+  summarise(lari = median(logari), lower = quantile(logari, 0.025), upper = quantile(logari, 0.975))
 export(ARI_UI, here("data", "ari", "ARI_rev_mix_UI.Rdata"))
 
 rm(list=ls())
