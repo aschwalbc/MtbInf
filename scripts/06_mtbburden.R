@@ -102,7 +102,7 @@ top30 <- c("AGO", "BGD", "BRA", "CAF", "CHN", "COD", "COG", "PRK", "ETH", "GAB",
            "IND", "IDN", "KEN", "LSO", "LBR", "MNG", "MOZ", "MMR", "NAM", "NGA", 
            "PAK", "PNG", "PHL", "SLE", "ZAF", "THA", "UGA", "TZA", "VNM", "ZMB")
 
-tabs4 <- import(here("data", "ari", "ARI_rev_mix_CI.Rdata")) %>% 
+tabs4 <- import(here("data", "ari", "ARI_rev_mix_UI.Rdata")) %>% 
   filter(year == 2022, iso3 %in% top30) %>% 
   rename(val = lari, lo = lower, hi = upper) %>% 
   mutate(across(c(val, lo, hi), ~ exp(.))) %>%
@@ -123,7 +123,7 @@ pmed <- import(here("data", "gp", "GP_PMED.Rdata")) %>%
   mutate(est = paste0(val, " (", lo, "-", hi, ")")) %>% 
   select(iso3, est)
 
-tabs5 <- import(here("data", "ari", "ARI_rev_mix_CI.Rdata")) %>% 
+tabs5 <- import(here("data", "ari", "ARI_rev_mix_UI.Rdata")) %>% 
   filter(year == 2014, iso3 %in% top30) %>% 
   rename(val = lari, lo = lower, hi = upper) %>% 
   mutate(across(c(val, lo, hi), ~ exp(.))) %>%
@@ -200,7 +200,7 @@ ARInorev <- import(here("data", "gp", "GP_norev.Rdata")) %>% # Unadjusted ARIs
 ARIrev <- import(here("data", "gp", "GP_rev.Rdata")) %>% # Reversion-adjusted ARIs
   mutate(ageARI = "all", type = 'rev', source = NA)
 
-ARIrevmix <- import(here("data", "ari", "ARI_rev_mix_CI.Rdata")) %>% # Mixing-adjusted ARIs
+ARIrevmix <- import(here("data", "ari", "ARI_rev_mix_UI.Rdata")) %>% # Mixing-adjusted ARIs
   within(rm(reg)) %>% 
   mutate(type = 'mix', source = NA)
 
@@ -243,8 +243,8 @@ ggplot(filter(logARIs, iso3 %in% c('IND', 'CHN', 'IDN'), is.na(source))) +
   coord_cartesian(ylim = c(-6, 0)) + 
   labs(x = 'Year', y = 'Annual risk of infection (log)',
        colour = 'Age group', fill = 'Age group', shape = 'Source') +
-  scale_colour_manual(values = c('All' = '#F9938C', '0-15' = '#98BE43', '15-45' = '#45CCD0', '45+' = '#D398FF')) +
-  scale_fill_manual(values = c('All' = '#F9938C', '0-15' = '#98BE43', '15-45' = '#45CCD0', '45+' = '#D398FF')) +
+  scale_colour_manual(values = c('All' = '#F9938C', '0-15' = '#DDAA00', '15-45' = '#1B9E77', '45+' = '#4B0082')) +
+  scale_fill_manual(values = c('All' = '#F9938C', '0-15' = '#DDAA00', '15-45' = '#1B9E77', '45+' = '#4B0082')) +
   theme_bw() + 
   theme(legend.position = 'bottom', panel.spacing = unit(0.75, "lines"),
         axis.title.x = element_text(vjust = -2), text = element_text(family = "Open Sans"))
@@ -266,8 +266,8 @@ ggplot(filter(ARIs, iso3 %in% c('IND', 'CHN', 'IDN'), is.na(source))) +
   coord_cartesian(ylim = c(0, 0.22)) + 
   labs(x = 'Year', y = 'Annual risk of infection',
        colour = 'Age group', fill = 'Age group', shape = 'Source') +
-  scale_colour_manual(values = c('All' = '#F9938C', '0-15' = '#98BE43', '15-45' = '#45CCD0', '45+' = '#D398FF')) +
-  scale_fill_manual(values = c('All' = '#F9938C', '0-15' = '#98BE43', '15-45' = '#45CCD0', '45+' = '#D398FF')) +
+  scale_colour_manual(values = c('All' = '#F9938C', '0-15' = '#DDAA00', '15-45' = '#1B9E77', '45+' = '#4B0082')) +
+  scale_fill_manual(values = c('All' = '#F9938C', '0-15' = '#DDAA00', '15-45' = '#1B9E77', '45+' = '#4B0082')) +
   theme_bw() + 
   theme(legend.position = 'bottom', panel.spacing = unit(0.75, "lines"),
         axis.title.x = element_text(vjust = -2), text = element_text(family = "Open Sans"))
@@ -305,7 +305,7 @@ ggplot(data = world) +
   coord_sf(crs = "+proj=robin +lon_0=0")
 dev.off()
 
-# 3.3 Figure S6. Prevalence of infection by age group
+# 3.3 Figure 4. Prevalence of infection by age group
 age_labs <- c("0-5", "5-10", "10-15", "15-20", "20-25", "25-30", "30-35", "35-40", "40-45", 
               "45-50", "50-55", "55-60", "60-65", "65-70", "70-75", "75-80", "80+")
 
@@ -357,7 +357,7 @@ ggplot(data = filter(MTBiso, iso3 == 'ZAF', var %in% c('pI', 'prI'))) +
 dev.off()
 
 # 4.3 Top 10 countries with highest number of Mtb infections
-top10 <- c('IND', 'CHN', 'IDN', 'PHL', 'BGD', 'PAK', 'VNM', 'THA', 'MMR', 'COD')
+top10 <- c('IND', 'IDN', 'CHN', 'PHL', 'BGD', 'PAK', 'COD', 'NGA', 'VNM', 'ZAF')
 png(here("plots", paste0("06x_infnum_topiso_", scenario, ".png")), width = 9, height = 4.5, units = 'in', res = 1000)
 ggplot(filter(MTBiso, year == 2022, var %in% c('It', 'rIt'), iso3 %in% top10)) +
   geom_col(aes(x = reorder(iso3, -val * (var == 'It'), FUN = sum), y = val, fill = var), position = "identity") +
@@ -371,7 +371,7 @@ ggplot(filter(MTBiso, year == 2022, var %in% c('It', 'rIt'), iso3 %in% top10)) +
 dev.off()  
 
 # 4.4 Top 10 countries with highest prevalence of Mtb infections
-prev10 <- c('PRK', 'PHL', 'KHM', 'TLS', 'MMR', 'IDN', 'MNG', 'GAB', 'BGD', 'LAO')
+prev10 <- c('PHL', 'PRK', 'TLS', 'GAB', 'KHM', 'MNG', 'IDN', 'CAF', 'MMR', 'PNG')
 png(here("plots", paste0("06x_infpct_topiso_", scenario, ".png")), width = 9, height = 4.5, units = 'in', res = 1000)
 ggplot(filter(MTBiso, year == 2022, var %in% c('pI', 'prI'), iso3 %in% prev10)) +
   geom_col(aes(x = reorder(iso3, -val * (var == 'pI'), FUN = sum), y = val, fill = var), position = "identity") +
@@ -391,7 +391,7 @@ reg <- ne_countries(scale = 'small', type = 'countries', returnclass = 'sf') %>%
 colours <- c('AMR' = "#E56E5A", 'EUR' = "#4C6A9C", 'EMR' = "#BC8E5A",
              'AFR' = "#A2559C", 'WPR' = "#B16215", 'SEA' = "#3B8E1E")
 
-png(here("plots",paste0("06_regmap.png")), width = 10, height = 5, units = 'in', res = 1000)
+png(here("plots",paste0("06x_regmap.png")), width = 10, height = 5, units = 'in', res = 1000)
 ggplot(data = reg) +
   geom_sf(aes(fill = reg)) +
   scale_fill_manual(values = colours, na.value = "#D3D3D3", na.translate = TRUE) +
