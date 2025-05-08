@@ -147,8 +147,8 @@ tabs5 %>%
   select(pmed_val, `00-14_val`, `15-44_val`, `45+_val`) %>% 
   rename(pmed = pmed_val, `00-14` = `00-14_val`, `15-44` = `15-44_val`, `45+` = `45+_val`)
 
-# 2.4 Table S6 - Regional distribution of global viable Mtb infection burden
-tabs6 <- MTBreg %>% 
+# 2.4 Table S8 - Regional distribution of global viable Mtb infection burden
+tabs8 <- MTBreg %>% 
   filter(year == 2022) %>% 
   filter(var %in% c('regIt','regrIt')) %>% 
   mutate(across(c(val, lo, hi), ~ round(. * 100, 1))) %>%
@@ -160,8 +160,8 @@ tabs6 <- MTBreg %>%
   select(reg, regrIt, regIt) %>% 
   rename('WHO region' = reg ,'Recent infections' = regrIt, 'All infections' = regIt)
 
-# 2.5 Table S7 - Country-level estimates (absolute number)
-tabs7 <- MTBiso %>%
+# 2.5 Table S9 - Country-level estimates (absolute number)
+tabs9 <- MTBiso %>%
   filter(year == 2022) %>%
   filter(var %in% c('It', 'rIt')) %>%
   mutate(across(c(val, lo, hi), ~ round(. / 1e6, 2))) %>%
@@ -174,8 +174,8 @@ tabs7 <- MTBiso %>%
   select(Country, `Recent infections`, `All infections`) %>% 
   slice_head(n = 10)
 
-# 2.6 Table S8 - Country-level estimates (proportion)
-tabs8 <- MTBiso %>% 
+# 2.6 Table S10 - Country-level estimates (proportion)
+tabs10 <- MTBiso %>% 
   filter(year == 2022) %>% 
   filter(var %in% c('prI', 'pI', 'rec')) %>% 
   mutate(across(c(val, lo, hi), ~ round(. * 100, 1))) %>%
@@ -228,15 +228,15 @@ rm(ARInorev, ARIrev, ARIrevmix, ARI)
 facetlabs <- c(norev = "Unadjusted ARIs", rev = "Reversion-adjusted ARIs", mix = "Mixing and reversion-adjusted ARIs")
 
 png(here("plots", paste0("06_logari_", scenario, ".png")), width = 10, height = 6, units = 'in', res = 1000)
-ggplot(filter(logARIs, iso3 %in% c('IND', 'CHN', 'IDN'), is.na(source))) +
-  facet_grid(rows = vars(fct_relevel(iso3, 'IND', 'CHN', 'IDN')), 
+ggplot(filter(logARIs, iso3 %in% c('IND', 'IDN', 'CHN'), is.na(source))) +
+  facet_grid(rows = vars(fct_relevel(iso3, 'IND', 'IDN', 'CHN')), 
              cols = vars(type), 
              labeller = labeller(type = facetlabs)) +
   geom_line(aes(x = year, y = lari, colour = ageARI)) +
   geom_ribbon(aes(x = year, ymin = lower, ymax = upper, fill = ageARI), alpha = 0.2) +
-  geom_point(data = filter(logARIs, iso3 %in% c('IND', 'CHN', 'IDN'), !is.na(source)), 
+  geom_point(data = filter(logARIs, iso3 %in% c('IND', 'IDN', 'CHN'), !is.na(source)), 
              aes(x = year, y = lari, shape = source), size = 1) +
-  geom_errorbar(data = filter(logARIs, iso3 %in% c('IND', 'CHN', 'IDN'), !is.na(source)), 
+  geom_errorbar(data = filter(logARIs, iso3 %in% c('IND', 'IDN', 'CHN'), !is.na(source)), 
                 aes(x = year, ymin = lower, ymax = upper), linewidth = 0.1) +
   scale_y_continuous(expand = c(0, 0), breaks = seq(-6, 0, 1)) +
   scale_x_continuous(expand = c(0, 0)) +
@@ -251,15 +251,15 @@ ggplot(filter(logARIs, iso3 %in% c('IND', 'CHN', 'IDN'), is.na(source))) +
 dev.off()
 
 png(here("plots", paste0("06_ari_", scenario, ".png")), width = 10, height = 6, units = 'in', res = 1000)
-ggplot(filter(ARIs, iso3 %in% c('IND', 'CHN', 'IDN'), is.na(source))) +
-  facet_grid(rows = vars(fct_relevel(iso3, 'IND', 'CHN', 'IDN')), 
+ggplot(filter(ARIs, iso3 %in% c('IND', 'IDN', 'CHN'), is.na(source))) +
+  facet_grid(rows = vars(fct_relevel(iso3, 'IND', 'IDN', 'CHN')), 
              cols = vars(type), 
              labeller = labeller(type = facetlabs)) +
   geom_line(aes(x = year, y = lari, colour = ageARI)) +
   geom_ribbon(aes(x = year, ymin = lower, ymax = upper, fill = ageARI), alpha = 0.2) +
-  geom_point(data = filter(ARIs, iso3 %in% c('IND', 'CHN', 'IDN'), !is.na(source)), 
+  geom_point(data = filter(ARIs, iso3 %in% c('IND', 'IDN', 'CHN'), !is.na(source)), 
              aes(x = year, y = lari, shape = source), size = 1) +
-  geom_errorbar(data = filter(ARIs, iso3 %in% c('IND', 'CHN', 'IDN'), !is.na(source)), 
+  geom_errorbar(data = filter(ARIs, iso3 %in% c('IND', 'IDN', 'CHN'), !is.na(source)), 
                 aes(x = year, ymin = lower, ymax = upper), linewidth = 0.1) +
   scale_y_continuous(expand = c(0, 0), breaks = seq(0, 0.5, 0.05), labels = scales::label_percent()) +
   scale_x_continuous(expand = c(0, 0)) +
@@ -404,7 +404,7 @@ dev.off()
 num <- MTBiso %>%
   filter(year == 2022) %>%
   filter(var %in% c('It', 'rIt')) %>%
-  mutate(across(c(val, lo, hi), ~ round(./1e3) * 1e3)) %>% 
+  mutate(across(c(val, lo, hi), ~ round(./1e2) * 1e2)) %>% 
   mutate(across(c(val, lo, hi), ~ scales::comma(., accuracy = 1))) %>% 
   mutate(est = paste0(val, " (", lo, "-", hi, ")")) %>%
   select(iso3, var, est, val) %>%
@@ -415,14 +415,14 @@ num <- MTBiso %>%
 
 numk <- MTBiso_kidnum %>%
   filter(year == 2022) %>%
-  filter(agegp == '00-14', var == 'rI') %>% 
-  mutate(across(c(val, lo, hi), ~ round(./1e3) * 1e3)) %>% 
+  filter(agegp == '00-14', var %in% c('rI', 'tI')) %>% 
+  mutate(across(c(val, lo, hi), ~ round(./1e2) * 1e2)) %>% 
   mutate(across(c(val, lo, hi), ~ scales::comma(., accuracy = 1))) %>%
   mutate(est = paste0(val, " (", lo, "-", hi, ")")) %>% 
   select(iso3, var, est) %>% 
   pivot_wider(names_from = var, values_from = est, names_sep = "_") %>%
   arrange(iso3) %>%
-  rename('Country' = iso3, 'Recent infections in children' = rI)
+  rename('Country' = iso3, 'Recent infections' = rI, 'All infections' = tI)
 
 pct <- MTBiso %>%
   filter(year == 2022) %>% 
@@ -434,4 +434,16 @@ pct <- MTBiso %>%
   pivot_wider(names_from = var, values_from = c(est, val), names_sep = "_") %>%
   arrange(iso3) %>%
   rename('Country' = iso3, 'Recent infections' = est_prI, 'All infections' = est_pI) %>%
+  select(Country, `Recent infections`, `All infections`)
+
+pctk <- MTBiso_kidpct %>% 
+  filter(year == 2022) %>% 
+  filter(agegp == '00-14', var %in% c('pprI', 'ppI')) %>% 
+  mutate(across(c(val, lo, hi), ~ round(. * 100, 2))) %>%
+  mutate(across(c(val, lo, hi), ~ sprintf("%.2f", .))) %>%
+  mutate(est = paste0(val, " (", lo, "-", hi, ")")) %>%
+  select(iso3, var, est) %>%
+  pivot_wider(names_from = var, values_from = est, names_sep = "_") %>%
+  arrange(iso3) %>%
+  rename('Country' = iso3, 'Recent infections' = pprI, 'All infections' = ppI) %>%
   select(Country, `Recent infections`, `All infections`)
