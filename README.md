@@ -14,10 +14,6 @@ This repository contains the code and data used to estimate the global burden of
 
 -   `sources/`: Source files and references used in the analysis.
 
--   `supp mat/`: Supplementary materials supporting the study.
-
--   `MtbInf.Rproj`: R project file for easy navigation and project management.
-
 ### Usage
 
 The outputs generated from the analysis include:
