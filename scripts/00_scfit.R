@@ -132,7 +132,7 @@ tgt <- c(D$m1, D$m2, D$m3, D$m4)
 matplot(A)
 for(i in 1:4) abline(h = tgt[i], col = i)
 
-# 2.3 Matrix exponents approach
+# 2.3 ODE approach
 sc_model <- function(parms, end_time = 50) {
   
   des <- function(time, state, parms) {
