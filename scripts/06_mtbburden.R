@@ -321,6 +321,37 @@ ggplot(filter(MTBreg_agepct, year == 2022, var != 'rec')) +
         axis.title.x = element_text(vjust = -2), text = element_text(family = "Open Sans"))
 dev.off()
 
+# 3.4 Figure S1-6. Single country ARI trajectories
+ARIreg <- ARIs %>%
+  filter(type == "rev") %>%
+  left_join(MTBiso %>% select(iso3, reg) %>% distinct(iso3, .keep_all = TRUE),by = "iso3")
+
+for(i in 1:length(reg)){
+  print(reg[i])
+  ARIregs <- ARIreg %>% filter(reg == !!reg[i])
+  
+  png(here("plots", paste0("06_gplin_ari_", reg[i], ".png")), width = 16, height = 10.5, units = 'in', res = 1000)
+  
+  p <- ggplot(filter(ARIregs, is.na(source))) +
+    facet_wrap(~iso3, ncol = ) +
+    geom_line(aes(x = year, y = lari), colour = '#F9938C') +
+    geom_ribbon(aes(x = year, ymin = lower, ymax = upper), fill = '#F9938C', alpha = 0.2) +
+    geom_point(data = filter(ARIregs, !is.na(source)),
+               aes(x = year, y = lari, shape = source), size = 1) +
+    geom_errorbar(data = filter(ARIregs, !is.na(source)),
+                  aes(x = year, ymin = lower, ymax = upper), linewidth = 0.1, width = 0) +
+    scale_y_continuous(expand = c(0, 0), breaks = seq(0, 0.5, 0.05), labels = scales::label_percent()) +
+    scale_x_continuous(expand = c(0, 0)) +
+    coord_cartesian(ylim = c(0, 0.22)) + 
+    labs(x = 'Year', y = 'Annual risk of infection', shape = 'Source') +
+    theme_bw() + 
+    theme(legend.position = 'bottom', panel.spacing = unit(0.75, "lines"),
+          axis.title.x = element_text(vjust = -2), text = element_text(family = "Open Sans"))
+  
+  print(p)
+  dev.off()
+}
+
 # 4. Extras ==========
 # 4.1 Absolute number of infections by age group
 png(here("plots", paste0("06x_reginf_agegpnum_", scenario, ".png")), width = 10, height = 6, units = 'in', res = 200)
