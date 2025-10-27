@@ -70,7 +70,7 @@ ari <- cau %>%
   rbind(irs) %>%
   mutate(sd = E / 1.96) %>%
   mutate(lo = exp(lari - sd), hi = exp(lari + sd)) %>%
-  mutate(ari = exp(lari)) %>%
+  mutate(val = exp(lari)) %>%
   mutate(agegp = case_when(
     age < 5 ~ "00-05",
     age >= 5 & age < 10 ~ "05-10",
@@ -79,7 +79,8 @@ ari <- cau %>%
     age >= 20 & age < 25 ~ "20-25",
     age >= 25 & age < 30 ~ "25-30"
   )) %>%
-  select(iso3, year, agegp, ari, lo, hi) %>%
+  mutate(type = "ari") %>%
+  select(iso3, year, agegp, type, val, lo, hi) %>%
   arrange(iso3, year, agegp)
 rm(cau, irs)
 
@@ -89,52 +90,19 @@ cau <- as.data.table(import(here("sources", "survs", "ari_cauthen.csv")))
 
 cau <- cau %>%
   filter(iso3 %in% wpp) %>%
+  mutate(year = ceiling(year)) %>%
   mutate(ari = ari * 1e-2,
-         agex = {
+         age = {
            start <- regexpr("\\(", age)
            stop <- regexpr("\\)", age)
            as.numeric(substr(as.character(age), start = start + 1, stop = stop - 1))
          }) %>%
-  mutate(var = ari / (agex * n)) %>%
+  mutate(var = ari / (age * n)) %>%
   mutate(E = sqrt(var) / ari) %>%
-  select(iso3, year, ari, E, age, agex) %>%
+  mutate(lari = log(ari)) %>%
   mutate(sd = E / 1.96) %>%
-  mutate(lower = exp(log(ari) - sd), upper = exp(log(ari) + sd)) %>%
-  mutate(prev = 1 - (1 - ari)^(agex),
-         lo = 1 - (1 - lower)^(agex),
-         hi = 1 - (1 - upper)^(agex)) %>%
-  mutate(age = gsub("\\s*\\(.*\\)\\s*", "", age)) %>%
-  mutate(agegp = case_when(
-    age == "0-14" ~ "00-15",
-    age == "0-4" ~ "00-05",
-    age == "0-9" ~ "00-10",
-    age == "0.16-4" ~ "00-05",
-    age == "0.25-4" ~ "00-05",
-    age == "1-4" ~ "00-05",
-    age == "1-9" ~ "00-10",
-    age == "15-19" ~ "15-20",
-    age == "18-22" ~ "15-25",
-    age == "4-5" ~ "00-05",
-    age == "4-6" ~ "00-10",
-    age == "5-8" ~ "05-10",
-    age == "5-9" ~ "05-10",
-    age == "6" ~ "05-10",
-    age == "6-10" ~ "05-10",
-    age == "6-14" ~ "05-15",
-    age == "6-15" ~ "05-15",
-    age == "6-16" ~ "05-20",
-    age == "6-7" ~ "05-10",
-    age == "7" ~ "05-10",
-    age == "7-10" ~ "05-10",
-    age == "7-14" ~ "05-15",
-    age == "7-15" ~ "05-15",
-    age == "7-8" ~ "05-10",
-    age == "8" ~ "05-10",
-    age == "8-12" ~ "05-15",
-    TRUE ~ NA_character_
-  )) %>%
-  na.omit() %>%
-  select(iso3, year, agegp, prev, lo, hi) %>%
+  mutate(lo = exp(lari - sd), hi = exp(lari + sd)) %>%
+  select(iso3, year, ari, lo, hi, age) %>%
   na.omit() %>%
   mutate(iso3 = factor(iso3)) %>%
   arrange(iso3, year) %>%
@@ -145,6 +113,7 @@ irs <- as.data.table(import(here("sources", "survs", "ari_sysrev.csv")))
 
 irs <- irs %>%
   filter(iso3 %in% wpp) %>%
+  mutate(year = ceiling(year)) %>%
   mutate(ari = ari * 1e-2,
          ari_lo = ari_lo * 1e-2,
          ari_hi = ari_hi * 1e-2) %>%
@@ -152,31 +121,41 @@ irs <- irs %>%
   mutate(var = if_else(!is.na(ari_hi), (1.96e-2 * (ari_hi - ari_lo))^2, ari / (mage * n))) %>%
   mutate(E = sqrt(var) / ari) %>%
   mutate(lari = log(ari)) %>%
-  mutate(ari_lo = ifelse(is.na(ari_lo) | is.nan(ari_lo), exp(lari - (E / 1.96)), ari_lo),
-         ari_hi = ifelse(is.na(ari_hi) | is.nan(ari_hi), exp(lari + (E / 1.96)), ari_hi)) %>%
-  mutate(prev = 1 - (1 - ari)^(mage),
-         lo = 1 - (1 - ari_lo)^(mage),
-         hi = 1 - (1 - ari_hi)^(mage)) %>%
-  mutate(agegp = case_when(
-    mage <= 5 ~ "00-05",
-    mage > 5 & mage <= 10 ~ "05-10",
-    mage > 10 & mage <= 15 ~ "10-15",
-    mage > 15 & mage <= 20 ~ "15-20",
-    mage > 20 & mage <= 25 ~ "20-25",
-    mage > 25 & mage <= 30 ~ "25-30",
-    TRUE ~ NA_character_
-  )) %>%
-  select(iso3, year, agegp, prev, lo, hi) %>%
+  mutate(lo = ifelse(is.na(ari_lo) | is.nan(ari_lo), exp(lari - (E / 1.96)), ari_lo),
+         hi = ifelse(is.na(ari_hi) | is.nan(ari_hi), exp(lari + (E / 1.96)), ari_hi)) %>%
+  select(iso3, year, ari, lo, hi, age = mage) %>%
   na.omit() %>%
   mutate(iso3 = factor(iso3)) %>%
   arrange(iso3, year) %>%
   as.data.table()
 
 # 3.3 Immunoreactivity estimates
-prv <- cau %>%
+prev <- cau %>%
   rbind(irs) %>%
-  mutate(year = ceiling(year))
+  mutate(year = ceiling(year)) %>%
+  mutate(val = 1 - (1 - ari)^(age),
+         lo = 1 - (1 - lo)^(age),
+         hi = 1 - (1 - hi)^(age)) %>%
+  mutate(agegp = case_when(
+    age < 5 ~ "00-05",
+    age >= 5 & age < 10 ~ "05-10",
+    age >= 10 & age < 15 ~ "10-15",
+    age >= 15 & age < 20 ~ "15-20",
+    age >= 20 & age < 25 ~ "20-25",
+    age >= 25 & age < 30 ~ "25-30"
+  )) %>%
+  mutate(type = "prev") %>%
+  select(iso3, year, agegp, type, val, lo, hi) %>%
+  arrange(iso3, year, agegp)
 rm(cau, irs)
+
+# 3.4 Immunoreactivity data
+imm <- ari %>%
+  rbind(prev) %>%
+  arrange(iso3, year, agegp, type)
+rm(ari, prev, wpp)
+
+export(imm, here("outputs", "mtbimm", "imm.Rdata"))
 
 # 4. Mtb infection estimates ==========
 mtb <- import(here("outputs", "mtb_y20", "MTBiso_agepct.Rdata")) %>%
