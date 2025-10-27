@@ -182,7 +182,7 @@ mtb <- mtb %>%
   select(-reg) %>%
   mutate(var = case_when(
     var == "pI" ~ "inf",
-    var == "prI" ~ "recinf"
+    var == "prI" ~ "rec"
   ))
 rm(iso, year)
 
@@ -190,8 +190,10 @@ rm(iso, year)
 # 5.1 Combined data
 mtbimm <- imm %>%
   rbind(mtb %>% semi_join(imm, by = c("iso3", "year", "agegp")))
+rm(imm, mtb)
 
-# 5.2 Calculate ratios
+# 5.2 Ratios
+# 5.2.1 Data subsets
 ari <- mtbimm %>%
   filter(var == "ari") %>%
   select(iso3, year, agegp, val_ari = val, lo_ari = lo, hi_ari = hi)
@@ -200,25 +202,75 @@ prev <- mtbimm %>%
   filter(var == "prev") %>%
   select(iso3, year, agegp, val_prev = val, lo_prev = lo, hi_prev = hi)
 
-mtbi <- mtbimm %>%
-  filter(var == "pI") %>%
-  select(iso3, year, agegp, val_pI = val, lo_pI = lo, hi_pI = hi)
+inf <- mtbimm %>%
+  filter(var == "inf") %>%
+  select(iso3, year, agegp, val_inf = val, lo_inf = lo, hi_inf = hi)
 
-mtbir <- mtbimm %>%
-  filter(var == "prI") %>%
-  select(iso3, year, agegp, val_prI = val, lo_prI = lo, hi_prI = hi)
+rec <- mtbimm %>%
+  filter(var == "rec") %>%
+  select(iso3, year, agegp, val_rec = val, lo_rec = lo, hi_rec = hi)
 
-rat_ari <- ari_data %>%
-  inner_join(pI_data, by = c("iso3", "year", "agegp")) %>%
+# 5.2.2 Ratio calculations
+# 5.2.2.1 ARI to total Mtb infection
+rat_ariinf <- ari %>%
+  inner_join(inf, by = c("iso3", "year", "agegp")) %>%
   mutate(
-    var = "rat_aripI",
-    val = val_ari / val_pI,
-    lo = lo_ari / lo_pI,
-    hi = hi_ari / hi_pI
+    var = "rat_ariinf",
+    val = val_ari / val_inf,
+    lo = lo_ari / lo_inf,
+    hi = hi_ari / hi_inf
   ) %>%
   select(iso3, year, agegp, var, val, lo, hi)
 
-# 5.3 Final combined data with ratios
+# 5.2.2.2 ARI to recent Mtb infection
+rat_arirec <- ari %>%
+  inner_join(rec, by = c("iso3", "year", "agegp")) %>%
+  mutate(
+    var = "rat_arirec",
+    val = val_ari / val_rec,
+    lo = lo_ari / lo_rec,
+    hi = hi_ari / hi_rec
+  ) %>%
+  select(iso3, year, agegp, var, val, lo, hi)
+rm(ari)
+
+# 5.2.2.3 Immunoreactivity prevalence to total Mtb infection
+rat_previnf <- prev %>%
+  inner_join(inf, by = c("iso3", "year", "agegp")) %>%
+  mutate(
+    var = "rat_previnf",
+    val = val_prev / val_inf,
+    lo = lo_prev / lo_inf,
+    hi = hi_prev / hi_inf
+  ) %>%
+  select(iso3, year, agegp, var, val, lo, hi)
+
+# 5.2.2.4 Immunoreactivity prevalence to recent Mtb infection
+rat_prevrec <- prev %>%
+  inner_join(rec, by = c("iso3", "year", "agegp")) %>%
+  mutate(
+    var = "rat_prevrec",
+    val = val_prev / val_rec,
+    lo = lo_prev / lo_rec,
+    hi = hi_prev / hi_rec
+  ) %>%
+  select(iso3, year, agegp, var, val, lo, hi)
+rm(prev, inf, rec)
+
+# 5.3 Combined ratios
 mtbimm <- mtbimm %>%
-  rbind(ratios) %>%
+  rbind(rat_ariinf) %>%
+  rbind(rat_arirec) %>%
+  rbind(rat_previnf) %>%
+  rbind(rat_prevrec) %>%
   arrange(iso3, year, agegp, var)
+rm(list = ls(pattern = "^rat_"))
+
+export(mtbimm, here("outputs", "mtbimm", "mtbimm.Rdata"))
+
+# 5.4 Checks
+mtbimm <- import(here("outputs", "mtbimm", "mtbimm.Rdata"))
+summary(filter(mtbimm, var == "rat_ariinf")$val) # ARI to total Mtb infection [1.25; IQR: 1.00-1.55]
+summary(filter(mtbimm, var == "rat_arirec")$val) # ARI to recent Mtb infection [2.28; IQR: 1.97-2.58]
+summary(filter(mtbimm, var == "rat_previnf")$val) # Immunoreactivity prevalence to total Mtb infection [2.77; IQR: 2.14-3.66]
+summary(filter(mtbimm, var == "rat_prevrec")$val) # Immunoreactivity prevalence to recent Mtb infection [5.30; IQR: 4.09-6.72]
