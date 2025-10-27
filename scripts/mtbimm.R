@@ -10,14 +10,14 @@ rev <- 2.9 # True ARI = 2-5x higher (Schwalb AJE 2023)
 erev <- 1.5 # Increasing variance estimates by 50%
 
 # 1. Country list ==========
-# 1.1 Filtering countries with population size <500k in 2022
+# 1.1 Filtering countries with population size <500k in 2023
 wpp <- import(here("sources", "pop", "WPP_Pop_1950-2100.csv"))
 
-wpp <- wpp %>% # Population data
+wpp <- wpp %>%
   select(iso3 = ISO3_code, year = Time, ageWPP = AgeGrp, pop = PopTotal) %>%
   mutate(iso3 = na_if(iso3, "")) %>%
   filter(!is.na(iso3)) %>%
-  filter(year == 2022) %>%
+  filter(year == 2023) %>%
   group_by(iso3, year) %>%
   summarise(pop = sum(pop) * 1e3) %>%
   filter(pop >= 500000) %>%
@@ -79,8 +79,8 @@ ari <- cau %>%
     age >= 20 & age < 25 ~ "20-25",
     age >= 25 & age < 30 ~ "25-30"
   )) %>%
-  mutate(type = "ari") %>%
-  select(iso3, year, agegp, type, val, lo, hi) %>%
+  mutate(var = "ari") %>%
+  select(iso3, year, agegp, var, val, lo, hi) %>%
   arrange(iso3, year, agegp)
 rm(cau, irs)
 
@@ -144,22 +144,81 @@ prev <- cau %>%
     age >= 20 & age < 25 ~ "20-25",
     age >= 25 & age < 30 ~ "25-30"
   )) %>%
-  mutate(type = "prev") %>%
-  select(iso3, year, agegp, type, val, lo, hi) %>%
+  mutate(var = "prev") %>%
+  select(iso3, year, agegp, var, val, lo, hi) %>%
   arrange(iso3, year, agegp)
 rm(cau, irs)
 
 # 3.4 Immunoreactivity data
 imm <- ari %>%
   rbind(prev) %>%
-  arrange(iso3, year, agegp, type)
+  arrange(iso3, year, agegp, var)
 rm(ari, prev, wpp)
 
 export(imm, here("outputs", "mtbimm", "imm.Rdata"))
 
 # 4. Mtb infection estimates ==========
-mtb <- import(here("outputs", "mtb_y20", "MTBiso_agepct.Rdata")) %>%
-  filter(iso3 %in% unique(prv$iso3)) %>%
+# 4.0 Country-year data
+imm <- import(here("outputs", "mtbimm", "imm.Rdata"))
+iso <- as.character(unique(imm$iso3))
+year <- unique(imm$year)
+
+# 4.1 Mtb infection data
+mtb <- import(here("outputs", "mtb_y20", "MTBiso_agepct.Rdata"))
+
+mtb <- mtb %>%
+  filter(iso3 %in% iso) %>%
+  filter(year %in% year) %>%
   filter(agegp %in% c("00-04", "05-09", "10-14", "15-19", "20-24", "25-29")) %>%
+  mutate(agegp = case_when(
+    agegp == "00-04" ~ "00-05",
+    agegp == "05-09" ~ "05-10",
+    agegp == "10-14" ~ "10-15",
+    agegp == "15-19" ~ "15-20",
+    agegp == "20-24" ~ "20-25",
+    agegp == "25-29" ~ "25-30"
+  )) %>%
   filter(var != "rec") %>%
-  filter(year %in% unique(prv$year))
+  select(-reg) %>%
+  mutate(var = case_when(
+    var == "pI" ~ "inf",
+    var == "prI" ~ "recinf"
+  ))
+rm(iso, year)
+
+# 5. Exploration =========
+# 5.1 Combined data
+mtbimm <- imm %>%
+  rbind(mtb %>% semi_join(imm, by = c("iso3", "year", "agegp")))
+
+# 5.2 Calculate ratios
+ari <- mtbimm %>%
+  filter(var == "ari") %>%
+  select(iso3, year, agegp, val_ari = val, lo_ari = lo, hi_ari = hi)
+
+prev <- mtbimm %>%
+  filter(var == "prev") %>%
+  select(iso3, year, agegp, val_prev = val, lo_prev = lo, hi_prev = hi)
+
+mtbi <- mtbimm %>%
+  filter(var == "pI") %>%
+  select(iso3, year, agegp, val_pI = val, lo_pI = lo, hi_pI = hi)
+
+mtbir <- mtbimm %>%
+  filter(var == "prI") %>%
+  select(iso3, year, agegp, val_prI = val, lo_prI = lo, hi_prI = hi)
+
+rat_ari <- ari_data %>%
+  inner_join(pI_data, by = c("iso3", "year", "agegp")) %>%
+  mutate(
+    var = "rat_aripI",
+    val = val_ari / val_pI,
+    lo = lo_ari / lo_pI,
+    hi = hi_ari / hi_pI
+  ) %>%
+  select(iso3, year, agegp, var, val, lo, hi)
+
+# 5.3 Final combined data with ratios
+mtbimm <- mtbimm %>%
+  rbind(ratios) %>%
+  arrange(iso3, year, agegp, var)
