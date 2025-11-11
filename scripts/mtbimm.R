@@ -274,3 +274,10 @@ summary(filter(mtbimm, var == "rat_ariinf")$val) # ARI to total Mtb infection [1
 summary(filter(mtbimm, var == "rat_arirec")$val) # ARI to recent Mtb infection [2.28; IQR: 1.97-2.58]
 summary(filter(mtbimm, var == "rat_previnf")$val) # Immunoreactivity prevalence to total Mtb infection [2.77; IQR: 2.14-3.66]
 summary(filter(mtbimm, var == "rat_prevrec")$val) # Immunoreactivity prevalence to recent Mtb infection [5.30; IQR: 4.09-6.72]
+
+mtbimm %>%
+  filter(var %in% c("rat_ariinf", "rat_arirec", "rat_previnf", "rat_prevrec")) %>%
+  group_by(var) %>%
+  summarise(median = median(val),
+            lo = quantile(val, 0.025),
+            hi = quantile(val, 0.975))
