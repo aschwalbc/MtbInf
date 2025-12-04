@@ -7,6 +7,7 @@ library(rio)
 library(here)
 library(tidyverse)
 library(glue)
+library(extrafont)
 
 # 1. SA: Varying self-clearance rates ==========
 # 1.1 Self-clearance rates
@@ -83,7 +84,7 @@ for(i in 1:nrow(sc)) {
 }
 
 run <- do.call("rbind", loop)
-rm(loop, out, parms, i)
+rm(sc_model, loop, out, parms, i)
 
 # 1.4 Plot
 ggplot(run) +
@@ -139,7 +140,55 @@ for(file in files) {
 sc_var <- bind_rows(loop) %>% 
   mutate(type = factor(type, levels = c("lo75", "lo50", "lo25", "ref", "hi25", "hi50", "hi75"))) %>% 
   arrange(type)
-rm(list = setdiff(ls(), "sc_var"))
+
+# 1.6 Plot
+files <- list.files(here("outputs", "sa_sc"), pattern = "\\.Rdata$", full.names = TRUE)
+loop <- list()
+
+for(file in files) {
+  df <- import(file)
+  name <- tools::file_path_sans_ext(basename(file))
+  
+  num <- df %>% 
+    filter(year == 2022) %>% 
+    filter(var %in% c('It', 'rIt')) %>% 
+    select(-year)
+  
+  pct <- df %>% 
+    filter(year == 2022) %>% 
+    filter(var %in% c('pI', 'prI')) %>% 
+    select(-year)
+
+  res <- rbind(num, pct) %>% 
+    mutate(type = name) %>% 
+    select(type, var, val, lo, hi)
+  
+  loop[[name]] <- res
+}
+
+sc_var_plot <- bind_rows(loop) %>%
+  mutate(type = factor(type, levels = c("lo75", "lo50", "lo25", "ref", "hi25", "hi50", "hi75"))) %>% 
+  arrange(type)
+
+png(here("plots", paste0("07_mtbinf_sc_var.png")), width = 9, height = 5, units = 'in', res = 1000)
+ggplot(filter(sc_var_plot, var %in% c("rIt", "It"))) +
+  geom_col(aes(x = type, y = val, fill = var), position = "identity") +
+  geom_errorbar(aes(x = type, ymin = lo, ymax = hi, group = var), 
+                position = position_dodge(width = 0.9), width = 0.50, colour = "#242424") +
+  scale_fill_manual(values = c("It" = "#900C3F", "rIt" = "#FF5733"),
+                    labels = c("It" = "Distal infections", "rIt" = "Recent infections")) +
+  scale_x_discrete(labels = c("lo75" = "-75%", "lo50" = "-50%", "lo25" = "-25%", 
+                              "ref" = "Reference", "hi25" = "+25%", "hi50" = "+50%", "hi75" = "+75%")) +
+  scale_y_continuous(labels = scales::label_number(scale = 1e-6, suffix = 'M', big.mark = ',')) +
+  labs(x = 'Self-clearance rate variation', y = expression('Number of viable '*italic('Mtb')*' infections'), fill = 'Type') +
+  theme_bw() +
+  theme(legend.position = 'bottom',
+        axis.title.x = element_text(margin = margin(t = 10)),
+        axis.title.y = element_text(margin = margin(r = 10)),
+        text = element_text(family = "Open Sans"))
+dev.off()  
+
+rm(list = setdiff(ls(), c("sc_var", "sc_var_plot")))
 
 # 2. SA: Exploring correlations in self-clearance ==========
 # 2.1 Sampling self-clearance rates
@@ -162,8 +211,8 @@ ggplot(df, aes(x = val, fill = source)) +
                     labels = c("full" = "Full set", "sample" = "Sampled set")) +
   labs(x = NULL, y = "Count", fill = NULL) +
   theme_bw() +
-  theme(legend.position = "bottom", legend.direction = "horizontal",
-        text = element_text(family = "Open Sans"))
+    theme(legend.position = "bottom", legend.direction = "horizontal",
+      text = element_text(family = "Open Sans"))
 
 # 2.4 Results
 MTBglb <- import(here("outputs", "sa_corr", "MTBglb.Rdata"))
