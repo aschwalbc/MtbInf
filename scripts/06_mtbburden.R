@@ -312,7 +312,7 @@ ggplot(filter(MTBreg_agepct, year == 2022, var != 'rec')) +
   facet_wrap(~reg) +
   geom_col(mapping = aes(x = agegp, y = val, fill = factor(var, levels = c("pI", "prI"))), position = "identity") +
   scale_fill_manual(values = c("pI" = "#900C3F", "prI" = "#FF5733"),
-                    labels = c("pI" = "Distal infection", "prI" = "Recent infection")) +
+                    labels = c("pI" = "All infections", "prI" = "Recent infection")) +
   scale_y_continuous(labels = scales::percent, breaks = seq(0,0.12,0.02)) +
   scale_x_discrete(labels = age_labs) + 
   labs(x = 'Age group (years)', y = expression('Percentage infected with viable '*italic('Mtb')*' infection'), fill = 'Type') +
