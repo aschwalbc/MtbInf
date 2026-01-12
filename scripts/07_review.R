@@ -173,10 +173,8 @@ sc_var_plot <- bind_rows(loop) %>%
 png(here("plots", paste0("07_mtbinf_sc_var.png")), width = 9, height = 5, units = 'in', res = 1000)
 ggplot(filter(sc_var_plot, var %in% c("rIt", "It"))) +
   geom_col(aes(x = type, y = val, fill = var), position = "identity") +
-  geom_errorbar(aes(x = type, ymin = lo, ymax = hi, group = var), 
-                position = position_dodge(width = 0.9), width = 0.50, colour = "#242424") +
   scale_fill_manual(values = c("It" = "#900C3F", "rIt" = "#FF5733"),
-                    labels = c("It" = "Distal infections", "rIt" = "Recent infections")) +
+                    labels = c("It" = "All infections", "rIt" = "Recent infections")) +
   scale_x_discrete(labels = c("lo75" = "-75%", "lo50" = "-50%", "lo25" = "-25%", 
                               "ref" = "Reference", "hi25" = "+25%", "hi50" = "+50%", "hi75" = "+75%")) +
   scale_y_continuous(labels = scales::label_number(scale = 1e-6, suffix = 'M', big.mark = ',')) +
