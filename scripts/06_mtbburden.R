@@ -95,7 +95,7 @@ tab2 <- tab2 %>%
          'Proportion recently infected' = rec)
 rm(tab2ex)
 
-# 2.3 Table S4 - Adjusted ARIs for top 30 high burden countries
+# 2.3 Table S5 - Adjusted ARIs for top 30 high burden countries
 top30 <- c("AGO", "BGD", "BRA", "CAF", "CHN", "COD", "COG", "PRK", "ETH", "GAB",
            "IND", "IDN", "KEN", "LSO", "LBR", "MNG", "MOZ", "MMR", "NAM", "NGA", 
            "PAK", "PNG", "PHL", "SLE", "ZAF", "THA", "UGA", "TZA", "VNM", "ZMB")
@@ -111,7 +111,7 @@ tabs4 <- import(here("data", "ari", "ARI_rev_mix_UI.Rdata")) %>%
   pivot_wider(names_from = ageARI, values_from = est) %>% 
   rename('Country' = iso3)
 
-# 2.3 Table S5 - Adjusted ARIs for top 30 high burden countries
+# 2.3 Table S6 - Adjusted ARIs for top 30 high burden countries
 pmed <- import(here("data", "gp", "GP_PMED.Rdata")) %>% 
   filter(year == 2014) %>% 
   rename(val = lari, lo = lower, hi = upper) %>% 
@@ -145,7 +145,7 @@ tabs5 %>%
   select(pmed_val, `00-14_val`, `15-44_val`, `45+_val`) %>% 
   rename(pmed = pmed_val, `00-14` = `00-14_val`, `15-44` = `15-44_val`, `45+` = `45+_val`)
 
-# 2.4 Table S8 - Regional distribution of global viable Mtb infection burden
+# 2.4 Table S9 - Regional distribution of global viable Mtb infection burden
 tabs8 <- MTBreg %>% 
   filter(year == 2022) %>% 
   filter(var %in% c('regIt','regrIt')) %>% 
@@ -158,7 +158,7 @@ tabs8 <- MTBreg %>%
   select(reg, regrIt, regIt) %>% 
   rename('WHO region' = reg ,'Recent infections' = regrIt, 'All infections' = regIt)
 
-# 2.5 Table S9 - Country-level estimates (absolute number)
+# 2.5 Table S10 - Country-level estimates (absolute number)
 tabs9 <- MTBiso %>%
   filter(year == 2022) %>%
   filter(var %in% c('It', 'rIt')) %>%
@@ -172,7 +172,7 @@ tabs9 <- MTBiso %>%
   select(Country, `Recent infections`, `All infections`) %>% 
   slice_head(n = 10)
 
-# 2.6 Table S10 - Country-level estimates (proportion)
+# 2.6 Table S11 - Country-level estimates (proportion)
 tabs10 <- MTBiso %>% 
   filter(year == 2022) %>% 
   filter(var %in% c('prI', 'pI', 'rec')) %>% 
@@ -312,7 +312,7 @@ ggplot(filter(MTBreg_agepct, year == 2022, var != 'rec')) +
   facet_wrap(~reg) +
   geom_col(mapping = aes(x = agegp, y = val, fill = factor(var, levels = c("pI", "prI"))), position = "identity") +
   scale_fill_manual(values = c("pI" = "#900C3F", "prI" = "#FF5733"),
-                    labels = c("pI" = "All infections", "prI" = "Recent infections")) +
+                    labels = c("pI" = "Distal infections", "prI" = "Recent infections")) +
   scale_y_continuous(labels = scales::percent, breaks = seq(0,0.12,0.02)) +
   scale_x_discrete(labels = age_labs) + 
   labs(x = 'Age group (years)', y = expression('Percentage infected with viable '*italic('Mtb')*' infection'), fill = 'Type') +
@@ -391,7 +391,7 @@ png(here("plots", paste0("06x_infnum_topiso_", scenario, ".png")), width = 9, he
 ggplot(filter(MTBiso, year == 2022, var %in% c('It', 'rIt'), iso3 %in% top10)) +
   geom_col(aes(x = reorder(iso3, -val * (var == 'It'), FUN = sum), y = val, fill = var), position = "identity") +
   scale_fill_manual(values = c("It" = "#900C3F", "rIt" = "#FF5733"),
-                    labels = c("It" = "All infections", "rIt" = "Recent infections")) +
+                    labels = c("It" = "Distal infections", "rIt" = "Recent infections")) +
   scale_y_continuous(labels = scales::label_number(scale = 1e-6, suffix = 'M')) +
   labs(x = NULL, y = expression('Absolute number of viable '*italic('Mtb')*' infections'), fill = 'Type') +
   theme_bw() +
@@ -405,7 +405,7 @@ png(here("plots", paste0("06x_infpct_topiso_", scenario, ".png")), width = 9, he
 ggplot(filter(MTBiso, year == 2022, var %in% c('pI', 'prI'), iso3 %in% prev10)) +
   geom_col(aes(x = reorder(iso3, -val * (var == 'pI'), FUN = sum), y = val, fill = var), position = "identity") +
   scale_fill_manual(values = c("pI" = "#900C3F", "prI" = "#FF5733"),
-                    labels = c("pI" = "All infections", "prI" = "Recent infections")) +
+                    labels = c("pI" = "Distal infections", "prI" = "Recent infections")) +
   scale_y_continuous(labels = scales::label_percent(), breaks = seq(0, 0.25, 0.05)) +
   labs(x = NULL, y = expression('Prevalence of viable '*italic('Mtb')*' infection'), fill = 'Type') +
   theme_bw() +
