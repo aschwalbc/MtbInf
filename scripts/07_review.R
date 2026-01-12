@@ -174,7 +174,7 @@ png(here("plots", paste0("07_mtbinf_sc_var.png")), width = 9, height = 5, units 
 ggplot(filter(sc_var_plot, var %in% c("rIt", "It"))) +
   geom_col(aes(x = type, y = val, fill = var), position = "identity") +
   scale_fill_manual(values = c("It" = "#900C3F", "rIt" = "#FF5733"),
-                    labels = c("It" = "All infections", "rIt" = "Recent infections")) +
+                    labels = c("It" = "Distal infections", "rIt" = "Recent infections")) +
   scale_x_discrete(labels = c("lo75" = "-75%", "lo50" = "-50%", "lo25" = "-25%", 
                               "ref" = "Reference", "hi25" = "+25%", "hi50" = "+50%", "hi75" = "+75%")) +
   scale_y_continuous(labels = scales::label_number(scale = 1e-6, suffix = 'M', big.mark = ',')) +
@@ -274,3 +274,18 @@ ARIchecks <- ARIcomp %>%
          hi_prev = as.numeric(sub(".*–([0-9.]+)\\).*", "\\1", prev)),
          ci_overlap = lo_surv <= hi_prev & hi_surv >= lo_prev)
 
+# 4. Prevalence per age and WHO region ==========
+scenario <- "y20" # Main analysis
+# scenario <- "y50" # Sensitivity analysis
+
+rec <- import(here("outputs", paste0("mtb_", scenario), "MTBreg_agepct.Rdata")) %>%
+  filter(year == 2022) %>% 
+  filter(var %in% "prI") %>% 
+  mutate(pct = paste0(sprintf('%.1f', val * 100), " (", sprintf('%.1f', lo * 100), "-", sprintf('%.1f', hi * 100), ")")) %>%
+  select(reg, year, agegp, pct)
+
+all <- import(here("outputs", paste0("mtb_", scenario), "MTBreg_agepct.Rdata")) %>%
+  filter(year == 2022) %>% 
+  filter(var %in% "pI") %>% 
+  mutate(pct = paste0(sprintf('%.1f', val * 100), " (", sprintf('%.1f', lo * 100), "-", sprintf('%.1f', hi * 100), ")")) %>%
+  select(reg, year, agegp, pct)
